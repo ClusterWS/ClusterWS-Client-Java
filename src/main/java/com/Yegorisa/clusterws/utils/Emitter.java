@@ -11,8 +11,13 @@ public class Emitter {
         void call(String name, Object data);
     }
 
+    private ConcurrentHashMap<String, Listener> mEvents;
 
-    private ConcurrentHashMap<String, Listener> mEvents = new ConcurrentHashMap<>();
+
+    public Emitter() {
+        mEvents = new ConcurrentHashMap<>();
+    }
+
 
 
     public void on(String event, Listener fn) {
