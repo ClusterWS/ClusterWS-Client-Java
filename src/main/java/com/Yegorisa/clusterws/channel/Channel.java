@@ -48,7 +48,7 @@ public class Channel {
         mSocket.send("subscribe",mChannelName,"system");
     }
 
-    public String getmChannelName() {
+    public String getChannelName() {
         return mChannelName;
     }
 }

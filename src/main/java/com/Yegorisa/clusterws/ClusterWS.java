@@ -66,7 +66,7 @@ public class ClusterWS {
                             String channelName = jsonObject.getJSONArray("m").getString(1);
                             for (Channel channel:
                                  mChannels) {
-                                if (channel.getmChannelName().equals(channelName)){
+                                if (channel.getChannelName().equals(channelName)){
                                     channel.onMessage(jsonObject.getJSONArray("m").getString(2));
                                     break;
                                 }
@@ -117,7 +117,7 @@ public class ClusterWS {
     public Channel subscribe(String channelName){
         for (Channel channel:
              mChannels) {
-            if (channel.getmChannelName().equals(channelName)){
+            if (channel.getChannelName().equals(channelName)){
                 return channel;
             }
         }
@@ -136,6 +136,7 @@ public class ClusterWS {
 
     public void disconnect(Integer closeCode, String reason) {
         mWebSocket.disconnect(closeCode == null ? 1000 : closeCode, reason);
+
     }
 
     public ArrayList<Channel> getChannels(){
