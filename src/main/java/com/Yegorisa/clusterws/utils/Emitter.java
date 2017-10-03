@@ -1,6 +1,5 @@
 package com.Yegorisa.clusterws.utils;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -11,13 +10,13 @@ public class Emitter {
         void call(String name, Object data);
     }
 
+
     private ConcurrentHashMap<String, Listener> mEvents;
 
 
     public Emitter() {
         mEvents = new ConcurrentHashMap<>();
     }
-
 
 
     public void on(String event, Listener fn) {
@@ -37,8 +36,6 @@ public class Emitter {
 
 
     public void removeAllEvents() {
-        for (Map.Entry e : mEvents.entrySet()) {
-            mEvents.remove(e.getKey().toString());
-        }
+        mEvents = new ConcurrentHashMap<>();
     }
 }
