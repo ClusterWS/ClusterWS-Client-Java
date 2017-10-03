@@ -1,12 +1,16 @@
 package com.Yegorisa.clusterws;
 
-import com.neovisionaries.ws.client.*;
-import org.json.JSONObject;
+import com.Yegorisa.clusterws.channel.Channel;
 import com.Yegorisa.clusterws.utils.BasicListener;
 import com.Yegorisa.clusterws.utils.Emitter;
 import com.Yegorisa.clusterws.utils.Message;
+import com.neovisionaries.ws.client.*;
+import com.sun.istack.internal.NotNull;
+import com.sun.istack.internal.Nullable;
+import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -14,6 +18,7 @@ import java.util.logging.Logger;
 /**
  * Created by Egor on 01.10.2017.
  */
+
 public class ClusterWS {
     private static final Logger LOGGER = Logger.getLogger(ClusterWS.class.getName());
 
@@ -21,10 +26,12 @@ public class ClusterWS {
     private Emitter mEmitter;
     private BasicListener mBasicListener;
     private WebSocket mWebSocket;
+    private ArrayList<Channel> mChannels;
 
-    public ClusterWS(String url, Integer port, Boolean autoReconnect, Integer reconnectionInterval, Integer reconnectionAttempts) {
+    public ClusterWS(@NotNull String url, @NotNull Integer port, @Nullable Boolean autoReconnect, @Nullable Integer reconnectionInterval,@Nullable Integer reconnectionAttempts) {
         mEmitter = new Emitter();
         mOptions = new Options(url, port, autoReconnect, reconnectionInterval, reconnectionAttempts);
+        mChannels = new ArrayList<>();
         create();
     }
 
@@ -34,17 +41,17 @@ public class ClusterWS {
             mWebSocket.addListener(new WebSocketAdapter() {
                 @Override
                 public void onConnected(WebSocket websocket, Map<String, List<String>> headers) throws Exception {
-                    mBasicListener.onConnected();
+                    mBasicListener.onConnected(ClusterWS.this);
                 }
 
                 @Override
                 public void onConnectError(WebSocket websocket, WebSocketException cause) throws Exception {
-                    mBasicListener.onConnectError(cause);
+                    mBasicListener.onConnectError(ClusterWS.this,cause);
                 }
 
                 @Override
                 public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) throws Exception {
-                    mBasicListener.onDisconnected(serverCloseFrame, clientCloseFrame, closedByServer);
+                    mBasicListener.onDisconnected(ClusterWS.this,serverCloseFrame, clientCloseFrame, closedByServer);
                 }
 
                 @Override
@@ -56,6 +63,14 @@ public class ClusterWS {
                     JSONObject jsonObject = new JSONObject(message);
                     switch (jsonObject.getJSONArray("m").getString(0)) {
                         case "p":
+                            String channelName = jsonObject.getJSONArray("m").getString(1);
+                            for (Channel channel:
+                                 mChannels) {
+                                if (channel.getmChannelName().equals(channelName)){
+                                    channel.onMessage(jsonObject.getJSONArray("m").getString(2));
+                                    break;
+                                }
+                            }
                             break;
                         case "e":
                             mEmitter.emit(jsonObject.getJSONArray("m").getString(1), jsonObject.getJSONArray("m").get(2));
@@ -75,7 +90,7 @@ public class ClusterWS {
         }
     }
 
-    private void send(String event, Object data, String type) {
+    public void send(String event, Object data, String type) {
         mWebSocket.sendText(Message.messageEncode(event, data, type));
     }
 
@@ -87,17 +102,29 @@ public class ClusterWS {
         try {
             mWebSocket.connect();
         } catch (WebSocketException e){
-            mBasicListener.onConnectError(e);
+            mBasicListener.onConnectError(ClusterWS.this,e);
         }
     }
 
-    public void connectAsynchronosly(){
+    public void connectAsynchronous(){
         mWebSocket.connectAsynchronously();
     }
 
 
     public void send(String event, Object data) {
         mWebSocket.sendText(Message.messageEncode(event, data, "emit"));
+    }
+
+    public Channel subscribe(String channelName){
+        for (Channel channel:
+             mChannels) {
+            if (channel.getmChannelName().equals(channelName)){
+                return channel;
+            }
+        }
+        Channel newChannel = new Channel(channelName,this);
+        mChannels.add(newChannel);
+        return newChannel;
     }
 
     public void setBasicListener(BasicListener basicListener) {
@@ -110,5 +137,9 @@ public class ClusterWS {
 
     public void disconnect(Integer closeCode, String reason) {
         mWebSocket.disconnect(closeCode == null ? 1000 : closeCode, reason);
+    }
+
+    public ArrayList<Channel> getChannels(){
+        return mChannels;
     }
 }

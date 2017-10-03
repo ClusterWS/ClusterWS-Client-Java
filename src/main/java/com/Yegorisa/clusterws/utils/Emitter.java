@@ -15,21 +15,19 @@ public class Emitter {
     private ConcurrentHashMap<String, Listener> mEvents = new ConcurrentHashMap<>();
 
 
-    public Emitter on(String event, Listener fn) {
+    public void on(String event, Listener fn) {
         if (mEvents.containsKey(event)) {
             mEvents.remove(event);
         }
         mEvents.put(event, fn);
-        return this;
     }
 
 
-    public Emitter emit(String event, Object object) {
+    public void emit(String event, Object object) {
         Listener listener = mEvents.get(event);
         if (listener != null) {
             listener.call(event, object);
         }
-        return this;
     }
 
 

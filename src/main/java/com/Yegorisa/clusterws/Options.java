@@ -3,7 +3,7 @@ package com.Yegorisa.clusterws;
 /**
  * Created by Egor on 01.10.2017.
  */
-public class Options {
+class Options {
     private String mUrl;
     private Integer mPort;
     private Boolean mAutoReconnect;
@@ -14,7 +14,7 @@ public class Options {
      * If port is null, than standard
      */
 
-    public Options(String url, Integer port, Boolean autoReconnect, Integer reconnectionInterval, Integer reconnectionAttempts) {
+    Options(String url, Integer port, Boolean autoReconnect, Integer reconnectionInterval, Integer reconnectionAttempts) {
         if (url == null){
             throw new NullPointerException("Url must be provided");
         }

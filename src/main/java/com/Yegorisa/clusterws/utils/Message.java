@@ -9,7 +9,6 @@ import org.json.JSONObject;
 public class Message {
     public static String messageEncode(String event, Object data, String type) {
         JSONObject json = new JSONObject();
-        System.out.println(event);
         switch (type) {
             case "publish":
                 json.put("m", new JSONArray().put("p").put(event).put(data));
