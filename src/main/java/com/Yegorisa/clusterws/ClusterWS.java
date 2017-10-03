@@ -84,7 +84,6 @@ public class ClusterWS {
                     }
                 }
             });
-            mWebSocket.connectAsynchronously();
         } catch (IOException e) {
             LOGGER.warning(e.getMessage());
         }
