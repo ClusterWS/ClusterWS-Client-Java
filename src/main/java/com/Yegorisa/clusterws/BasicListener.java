@@ -1,6 +1,5 @@
-package com.Yegorisa.clusterws.utils;
+package com.Yegorisa.clusterws;
 
-import com.Yegorisa.clusterws.ClusterWS;
 import com.neovisionaries.ws.client.WebSocketException;
 import com.neovisionaries.ws.client.WebSocketFrame;
 
@@ -9,6 +8,8 @@ import com.neovisionaries.ws.client.WebSocketFrame;
  */
 public interface BasicListener {
     void onConnected(ClusterWS webSocket);
+
     void onDisconnected(ClusterWS webSocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer);
+
     void onConnectError(ClusterWS webSocket, WebSocketException exception);
 }

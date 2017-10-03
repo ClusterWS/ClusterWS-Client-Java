@@ -15,11 +15,10 @@ class Options {
      */
 
     Options(String url, Integer port, Boolean autoReconnect, Integer reconnectionInterval, Integer reconnectionAttempts) {
-        if (url == null){
+        if (url == null) {
             throw new NullPointerException("Url must be provided");
         }
-
-        if (port == null){
+        if (port == null) {
             throw new NullPointerException("Port must be provided");
         }
         mUrl = url;
@@ -29,23 +28,23 @@ class Options {
         mReconnectionAttempts = reconnectionAttempts != null ? reconnectionAttempts : 0;
     }
 
-    public String getUrl() {
+    String getUrl() {
         return mUrl;
     }
 
-    public Integer getPort() {
+    Integer getPort() {
         return mPort;
     }
 
-    public Boolean getAutoReconnect() {
+    Boolean getAutoReconnect() {
         return mAutoReconnect;
     }
 
-    public Integer getReconnectionInterval() {
+    Integer getReconnectionInterval() {
         return mReconnectionInterval;
     }
 
-    public Integer getReconnectionAttempts() {
+    Integer getReconnectionAttempts() {
         return mReconnectionAttempts;
     }
 }
