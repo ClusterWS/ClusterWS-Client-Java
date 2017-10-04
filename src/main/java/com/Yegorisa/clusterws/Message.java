@@ -35,24 +35,26 @@ class Message {
     }
 
     static void messageDecode(ClusterWS webSocket, String message){
+        System.out.println("Decode called");
         JSONObject jsonObject = new JSONObject(message);
         ArrayList<Channel> channels = webSocket.getChannels();
-        switch (jsonObject.getJSONArray("#").getString(0)) {
+        JSONArray jsonArray = jsonObject.getJSONArray("#");
+        switch (jsonArray.getString(0)) {
             case "p":
-                String channelName = jsonObject.getJSONArray("#").getString(1);
+                String channelName = jsonArray.getString(1);
                 for (Channel channel :
                         channels) {
                     if (channel.getChannelName().equals(channelName)) {
-                        channel.onMessage(jsonObject.getJSONArray("#").getString(2));
+                        channel.onMessage(jsonArray.getString(2));
                         break;
                     }
                 }
                 break;
             case "e":
-                webSocket.getEmitter().emit(jsonObject.getJSONArray("#").getString(1), jsonObject.getJSONArray("#").get(2));
+                webSocket.getEmitter().emit(jsonArray.getString(1), jsonArray.get(2));
                 break;
             case "s":
-                switch (jsonObject.getJSONArray("#").getString(1)) {
+                switch (jsonArray.getString(1)) {
                     case "c":
                         break;
                 }
