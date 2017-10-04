@@ -23,7 +23,7 @@ public interface BasicListener {
      * Called after the opening handshake of the ClusterWS connection succeeded.
      * <p>
      *
-     * @param webSocket The ClusterWS instance.
+     * @param webSocket the ClusterWS instance.
      *                  </p>
      *                  <p>
      * @since 1.0
@@ -37,11 +37,11 @@ public interface BasicListener {
      * Called after the WebSocket connection was closed.
      * <p>
      *
-     * @param webSocket        The ClusterWS instance.
-     * @param serverCloseFrame The <a href="https://tools.ietf.org/html/rfc6455#section-5.5.1"
+     * @param webSocket        the ClusterWS instance.
+     * @param serverCloseFrame the <a href="https://tools.ietf.org/html/rfc6455#section-5.5.1"
      *                         >close frame</a> which the server sent to this client.
      *                         This may be {@code null}.
-     * @param clientCloseFrame The <a href="https://tools.ietf.org/html/rfc6455#section-5.5.1"
+     * @param clientCloseFrame the <a href="https://tools.ietf.org/html/rfc6455#section-5.5.1"
      *                         >close frame</a> which this client sent to the server.
      *                         This may be {@code null}.
      * @param closedByServer   {@code true} if the closing handshake was started by the server.
@@ -59,7 +59,7 @@ public interface BasicListener {
      * Called when {@link ClusterWS#connect()} or {@link ClusterWS#connectAsynchronous()} failed.
      * <p>
      *
-     * @param webSocket The ClusterWS instance.
+     * @param webSocket the ClusterWS instance.
      * @param exception The exception thrown by {@link ClusterWS#connect() connect()}
      *                  method.
      *                  </p>

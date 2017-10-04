@@ -280,8 +280,8 @@ public class ClusterWS {
      * </p>
      * <p>
      *
-     * @param closeCode The reason for disconnect in number
-     * @param reason    The string reason
+     * @param closeCode the reason for disconnect in number
+     * @param reason    the string reason
      *                  which this WebSocket client will send to the server. Note that
      *                  the length of the bytes which represents the given reason must
      *                  not exceed 125. In other words, {@code (reason.}{@link
@@ -307,7 +307,7 @@ public class ClusterWS {
      * </p>
      * <p>
      *
-     * @return The array of channels
+     * @return the array of channels
      * </p>
      * <p>
      * @since 1.0
@@ -325,7 +325,7 @@ public class ClusterWS {
      * </p>
      * <p>
      *
-     * @param channelName The name of the channel
+     * @param channelName the name of the channel
      *                    </p>
      *                    <p>
      * @return {@link Channel}
