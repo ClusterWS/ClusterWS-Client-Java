@@ -5,15 +5,16 @@ import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
- * ClusterWS.
  * <p>
- * <h3>Create ClusterWS</h3>
+ * <h3>ClusterWS</h3>
+ * </p>
+ * <p>
+ * Cluster
+ * </p>
  *
  * @author Egor Egorov
  */
@@ -21,12 +22,19 @@ import java.util.logging.Logger;
 public class ClusterWS {
     private static final Logger LOGGER = Logger.getLogger(ClusterWS.class.getName());
 
+    private boolean mConnectAsynchronous;
+
     private Options mOptions;
     private Emitter mEmitter;
     private BasicListener mBasicListener;
     private WebSocket mWebSocket;
     private ArrayList<Channel> mChannels;
 
+    private Boolean mAutoReconnect;
+    private Timer mPingTimer;
+    private Integer mLost;
+
+    private Reconnection mReconnectionHandler;
     /**
      * <p></p>
      * Returns new {@code ClusterWS} instance.
@@ -40,6 +48,7 @@ public class ClusterWS {
      *                             </p>
      *                             <p>
      * @throws NullPointerException the given URI is {@code null} or the port is {@code null}.
+     * @throws IllegalArgumentException the given URI violates RFC 2396.
      *                              </p>
      *                              <p>
      * @since 1.0
@@ -50,6 +59,10 @@ public class ClusterWS {
         mEmitter = new Emitter();
         mOptions = new Options(url, port, autoReconnect, reconnectionInterval, reconnectionAttempts);
         mChannels = new ArrayList<>();
+        mReconnectionHandler = new Reconnection();
+        mAutoReconnect = mOptions.getAutoReconnect();
+        mLost = 0;
+
         create();
     }
 
@@ -59,27 +72,77 @@ public class ClusterWS {
             mWebSocket.addListener(new WebSocketAdapter() {
                 @Override
                 public void onConnected(WebSocket websocket, Map<String, List<String>> headers) throws Exception {
+                    mPingTimer = new Timer();
+                    mReconnectionHandler.onConnected();
+                    for (Channel channel :
+                            mChannels) {
+                        channel.subscribe();
+                    }
                     mBasicListener.onConnected(ClusterWS.this);
                 }
 
                 @Override
                 public void onConnectError(WebSocket websocket, WebSocketException cause) throws Exception {
                     mBasicListener.onConnectError(ClusterWS.this, cause);
+                    if (mAutoReconnect) {
+                        if (!mReconnectionHandler.getInReconnectionState()) {
+                            reconnection();
+                        }
+                    }
                 }
 
                 @Override
                 public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) throws Exception {
+                    if (mPingTimer != null){
+                        mPingTimer.cancel();
+                        mPingTimer = null;
+                    }
                     mBasicListener.onDisconnected(ClusterWS.this, serverCloseFrame, clientCloseFrame, closedByServer);
+                    if (serverCloseFrame == null) {
+                        serverCloseFrame = new WebSocketFrame().setCloseFramePayload(1006, "Unknown");
+                    }
+                    if (clientCloseFrame == null) {
+                        clientCloseFrame = new WebSocketFrame().setCloseFramePayload(1006, "Unknown");
+                    }
+                    System.out.println(clientCloseFrame.getCloseCode());
+                    System.out.println(serverCloseFrame.getCloseCode());
+
+                    if (mAutoReconnect && serverCloseFrame.getCloseCode() != 1000 && clientCloseFrame.getCloseCode() != 1000) {
+                        if (!mReconnectionHandler.getInReconnectionState()) {
+                            reconnection();
+                        }
+                    }
                 }
 
                 @Override
                 public void onTextMessage(WebSocket websocket, String message) throws Exception {
-                    System.out.println(message);
+                    LOGGER.info(message);
                     if (message.equals("#0")) {
+                        mLost = 0;
                         send("#1", null, "ping");
                         return;
                     }
                     Message.messageDecode(ClusterWS.this, message);
+                }
+
+                @Override
+                public void onMessageError(WebSocket websocket, WebSocketException cause, List<WebSocketFrame> frames) throws Exception {
+                    System.out.println("onMessageError");
+                }
+
+                @Override
+                public void onTextMessageError(WebSocket websocket, WebSocketException cause, byte[] data) throws Exception {
+                    System.out.println("onTextMessageError");
+                }
+
+                @Override
+                public void onSendError(WebSocket websocket, WebSocketException cause, WebSocketFrame frame) throws Exception {
+                    System.out.println("onSendError");
+                }
+
+                @Override
+                public void onUnexpectedError(WebSocket websocket, WebSocketException cause) throws Exception {
+                    System.out.println("onUnexpectedError");
                 }
             });
         } catch (IOException e) {
@@ -133,9 +196,13 @@ public class ClusterWS {
 
     public void connect() {
         try {
+            mWebSocket = mWebSocket.recreate();
             mWebSocket.connect();
+            mConnectAsynchronous = false;
         } catch (WebSocketException e) {
             mBasicListener.onConnectError(this, e);
+        } catch (IOException e) {
+            LOGGER.severe(e.getMessage());
         }
     }
 
@@ -155,7 +222,14 @@ public class ClusterWS {
      */
 
     public void connectAsynchronous() {
-        mWebSocket.connectAsynchronously();
+        try {
+            mWebSocket = mWebSocket.recreate();
+            mConnectAsynchronous = true;
+            mWebSocket.connectAsynchronously();
+        } catch (IOException e) {
+            LOGGER.severe(e.getMessage());
+        }
+
     }
 
     /**
@@ -351,5 +425,41 @@ public class ClusterWS {
 
     void send(String event, Object data, String type) {
         mWebSocket.sendText(Message.messageEncode(event, data, type));
+    }
+
+    private void reconnection() {
+        mReconnectionHandler.setInReconnectionState(true);
+        mReconnectionHandler.setReconnectionTimer(new Timer());
+        mReconnectionHandler.getReconnectionTimer().scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                if (getState() == WebSocketState.CLOSED) {
+                    mReconnectionHandler.incrementReconnectionAttempted();
+                    if (mOptions.getReconnectionAttempts() != 0 && mReconnectionHandler.getReconnectionAttempted() >= mOptions.getReconnectionAttempts()) {
+                        cancel();
+                        mAutoReconnect = false;
+                        mReconnectionHandler.setInReconnectionState(false);
+                    } else {
+                        if (mConnectAsynchronous) {
+                            connectAsynchronous();
+                        } else {
+                            connect();
+                        }
+                    }
+                }
+            }
+        }, 0, mOptions.getReconnectionInterval());
+    }
+
+    Timer getPingTimer() {
+        return mPingTimer;
+    }
+
+    Integer getLost() {
+        return mLost;
+    }
+
+    void incrementLost() {
+        mLost++;
     }
 }

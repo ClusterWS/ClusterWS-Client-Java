@@ -4,6 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.TimerTask;
 
 /**
  * Created by Egor on 01.10.2017.
@@ -34,7 +35,7 @@ class Message {
         }
     }
 
-    static void messageDecode(ClusterWS webSocket, String message){
+    static void messageDecode(final ClusterWS webSocket, String message){
         System.out.println("Decode called");
         JSONObject jsonObject = new JSONObject(message);
         ArrayList<Channel> channels = webSocket.getChannels();
@@ -56,6 +57,16 @@ class Message {
             case "s":
                 switch (jsonArray.getString(1)) {
                     case "c":
+                        webSocket.getPingTimer().scheduleAtFixedRate(new TimerTask() {
+                            @Override
+                            public void run() {
+                                if (webSocket.getLost() < 3){
+                                    webSocket.incrementLost();
+                                } else {
+                                    webSocket.disconnect(3001,"No pings");
+                                }
+                            }
+                        },0,jsonArray.getJSONObject(2).getInt("ping"));
                         break;
                 }
         }

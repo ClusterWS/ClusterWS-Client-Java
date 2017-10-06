@@ -10,7 +10,7 @@ public class Channel {
     private String mChannelName;
     private ClusterWS mSocket;
 
-    public Channel(String channelName, ClusterWS socket) {
+    Channel(String channelName, ClusterWS socket) {
         if (channelName == null) {
             throw new NullPointerException("Channel name must be provided");
         }
@@ -34,7 +34,8 @@ public class Channel {
         ArrayList<Channel> channelArrayList = mSocket.getChannels();
         channelArrayList.remove(this);
     }
-    public String getChannelName() {
+
+    String getChannelName() {
         return mChannelName;
     }
 
@@ -44,7 +45,7 @@ public class Channel {
         }
     }
 
-    private void subscribe() {
+    void subscribe() {
         mSocket.send("subscribe", mChannelName, "system");
     }
 

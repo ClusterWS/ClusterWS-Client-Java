@@ -12,25 +12,25 @@ public class Emitter {
 
     private ConcurrentHashMap<String, Listener> mEvents;
 
-    public Emitter() {
+    Emitter() {
         mEvents = new ConcurrentHashMap<>();
     }
 
-    public void on(String event, Listener fn) {
+    void on(String event, Listener fn) {
         if (mEvents.containsKey(event)) {
             mEvents.remove(event);
         }
         mEvents.put(event, fn);
     }
 
-    public void emit(String event, Object object) {
+    void emit(String event, Object object) {
         Listener listener = mEvents.get(event);
         if (listener != null) {
             listener.call(event, object);
         }
     }
 
-    public void removeAllEvents() {
+    void removeAllEvents() {
         mEvents = new ConcurrentHashMap<>();
     }
 }
