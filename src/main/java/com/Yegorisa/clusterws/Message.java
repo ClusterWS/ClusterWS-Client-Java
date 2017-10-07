@@ -1,5 +1,6 @@
 package com.Yegorisa.clusterws;
 
+import com.neovisionaries.ws.client.WebSocketState;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -61,9 +62,14 @@ class Message {
                             @Override
                             public void run() {
                                 if (webSocket.getLost() < 3){
+
                                     webSocket.incrementLost();
                                 } else {
-                                    webSocket.disconnect(3001,"No pings");
+                                    if (webSocket.getState() != WebSocketState.CLOSED){
+                                        webSocket.disconnect(3001,"No pings");
+                                        cancel();
+                                    }
+
                                 }
                             }
                         },0,jsonArray.getJSONObject(2).getInt("ping"));

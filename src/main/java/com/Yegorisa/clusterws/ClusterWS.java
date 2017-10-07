@@ -30,11 +30,11 @@ public class ClusterWS {
     private WebSocket mWebSocket;
     private ArrayList<Channel> mChannels;
 
-    private Boolean mAutoReconnect;
     private Timer mPingTimer;
     private Integer mLost;
 
     private Reconnection mReconnectionHandler;
+
     /**
      * <p></p>
      * Returns new {@code ClusterWS} instance.
@@ -43,14 +43,14 @@ public class ClusterWS {
      * @param url                  the URI of the WebSocket endpoint on the server side. Must be provided.
      * @param port                 the port of the WebSocket endpoint on the server side. Must be provided.
      * @param autoReconnect        if you want to auto reconnect {@code true}, and {@code false} if you do not. Default false.
-     * @param reconnectionInterval the number of milliseconds between each reconnection attempt. Default 5000 milliseconds.
-     * @param reconnectionAttempts the number of reconnection attempts. Default 0.
+     * @param reconnectionInterval the number of milliseconds between each reconnect attempt. Default 5000 milliseconds.
+     * @param reconnectionAttempts the number of reconnect attempts. Default 0.
      *                             </p>
      *                             <p>
-     * @throws NullPointerException the given URI is {@code null} or the port is {@code null}.
+     * @throws NullPointerException     the given URI is {@code null} or the port is {@code null}.
      * @throws IllegalArgumentException the given URI violates RFC 2396.
-     *                              </p>
-     *                              <p>
+     *                                  </p>
+     *                                  <p>
      * @since 1.0
      * </p>
      */
@@ -60,7 +60,7 @@ public class ClusterWS {
         mOptions = new Options(url, port, autoReconnect, reconnectionInterval, reconnectionAttempts);
         mChannels = new ArrayList<>();
         mReconnectionHandler = new Reconnection();
-        mAutoReconnect = mOptions.getAutoReconnect();
+        mReconnectionHandler.setAutoReconnect(autoReconnect);
         mLost = 0;
 
         create();
@@ -84,18 +84,19 @@ public class ClusterWS {
                 @Override
                 public void onConnectError(WebSocket websocket, WebSocketException cause) throws Exception {
                     mBasicListener.onConnectError(ClusterWS.this, cause);
-                    if (mAutoReconnect) {
-                        if (!mReconnectionHandler.getInReconnectionState()) {
-                            reconnection();
+                    if (mReconnectionHandler.getAutoReconnect()) {
+                        if (!mReconnectionHandler.isInReconnectionState()) {
+                            mReconnectionHandler.reconnect(ClusterWS.this);
                         }
                     }
                 }
 
                 @Override
                 public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) throws Exception {
-                    if (mPingTimer != null){
+                    if (mPingTimer != null) {
                         mPingTimer.cancel();
                         mPingTimer = null;
+                        mLost = 0;
                     }
                     mBasicListener.onDisconnected(ClusterWS.this, serverCloseFrame, clientCloseFrame, closedByServer);
                     if (serverCloseFrame == null) {
@@ -107,9 +108,10 @@ public class ClusterWS {
                     System.out.println(clientCloseFrame.getCloseCode());
                     System.out.println(serverCloseFrame.getCloseCode());
 
-                    if (mAutoReconnect && serverCloseFrame.getCloseCode() != 1000 && clientCloseFrame.getCloseCode() != 1000) {
-                        if (!mReconnectionHandler.getInReconnectionState()) {
-                            reconnection();
+                    if (mReconnectionHandler.getAutoReconnect() && serverCloseFrame.getCloseCode() != 1000 && clientCloseFrame.getCloseCode() != 1000) {
+                        if (!mReconnectionHandler.isInReconnectionState()) {
+
+                            mReconnectionHandler.reconnect(ClusterWS.this);
                         }
                     }
                 }
@@ -123,26 +125,6 @@ public class ClusterWS {
                         return;
                     }
                     Message.messageDecode(ClusterWS.this, message);
-                }
-
-                @Override
-                public void onMessageError(WebSocket websocket, WebSocketException cause, List<WebSocketFrame> frames) throws Exception {
-                    System.out.println("onMessageError");
-                }
-
-                @Override
-                public void onTextMessageError(WebSocket websocket, WebSocketException cause, byte[] data) throws Exception {
-                    System.out.println("onTextMessageError");
-                }
-
-                @Override
-                public void onSendError(WebSocket websocket, WebSocketException cause, WebSocketFrame frame) throws Exception {
-                    System.out.println("onSendError");
-                }
-
-                @Override
-                public void onUnexpectedError(WebSocket websocket, WebSocketException cause) throws Exception {
-                    System.out.println("onUnexpectedError");
                 }
             });
         } catch (IOException e) {
@@ -427,29 +409,6 @@ public class ClusterWS {
         mWebSocket.sendText(Message.messageEncode(event, data, type));
     }
 
-    private void reconnection() {
-        mReconnectionHandler.setInReconnectionState(true);
-        mReconnectionHandler.setReconnectionTimer(new Timer());
-        mReconnectionHandler.getReconnectionTimer().scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                if (getState() == WebSocketState.CLOSED) {
-                    mReconnectionHandler.incrementReconnectionAttempted();
-                    if (mOptions.getReconnectionAttempts() != 0 && mReconnectionHandler.getReconnectionAttempted() >= mOptions.getReconnectionAttempts()) {
-                        cancel();
-                        mAutoReconnect = false;
-                        mReconnectionHandler.setInReconnectionState(false);
-                    } else {
-                        if (mConnectAsynchronous) {
-                            connectAsynchronous();
-                        } else {
-                            connect();
-                        }
-                    }
-                }
-            }
-        }, 0, mOptions.getReconnectionInterval());
-    }
 
     Timer getPingTimer() {
         return mPingTimer;
@@ -461,5 +420,13 @@ public class ClusterWS {
 
     void incrementLost() {
         mLost++;
+    }
+
+    Options getOptions() {
+        return mOptions;
+    }
+
+    boolean isConnectAsynchronous() {
+        return mConnectAsynchronous;
     }
 }

@@ -29,6 +29,7 @@ public class Channel {
         return this;
     }
 
+    //TODO фикс удаление каналов
     public void unsubscribe() {
         mSocket.send("unsubscribe", mChannelName, "system");
         ArrayList<Channel> channelArrayList = mSocket.getChannels();

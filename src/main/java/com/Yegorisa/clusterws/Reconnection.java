@@ -1,11 +1,15 @@
 package com.Yegorisa.clusterws;
 
+import com.neovisionaries.ws.client.WebSocketState;
+
 import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Created by Egor on 05.10.2017.
  */
 class Reconnection {
+    private Boolean mAutoReconnect;
     private Boolean mInReconnectionState;
     private Integer mReconnectionAttempted;
     private Timer mReconnectionTimer;
@@ -24,27 +28,39 @@ class Reconnection {
         mReconnectionAttempted = 0;
     }
 
-    Boolean getInReconnectionState() {
+    Boolean isInReconnectionState() {
         return mInReconnectionState;
     }
 
-    Integer getReconnectionAttempted() {
-        return mReconnectionAttempted;
+    Boolean getAutoReconnect() {
+        return mAutoReconnect;
     }
 
-    Timer getReconnectionTimer() {
-        return mReconnectionTimer;
+    void setAutoReconnect(Boolean autoReconnect) {
+        mAutoReconnect = autoReconnect;
     }
 
-    void setInReconnectionState(Boolean inReconnectionState) {
-        mInReconnectionState = inReconnectionState;
-    }
-
-    void incrementReconnectionAttempted() {
-        mReconnectionAttempted++;
-    }
-
-    void setReconnectionTimer(Timer reconnectionTimer) {
-        mReconnectionTimer = reconnectionTimer;
+    void reconnect(final ClusterWS clusterWS) {
+        mInReconnectionState = true;
+        mReconnectionTimer = new Timer();
+        mReconnectionTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                if (clusterWS.getState() == WebSocketState.CLOSED) {
+                    mReconnectionAttempted++;
+                    if (clusterWS.getOptions().getReconnectionAttempts() != 0 && mReconnectionAttempted >= clusterWS.getOptions().getReconnectionAttempts()) {
+                        cancel();
+                        mAutoReconnect = false;
+                        mInReconnectionState = false;
+                    } else {
+                        if (clusterWS.isConnectAsynchronous()) {
+                            clusterWS.connectAsynchronous();
+                        } else {
+                            clusterWS.connect();
+                        }
+                    }
+                }
+            }
+        }, 0, clusterWS.getOptions().getReconnectionInterval());
     }
 }
