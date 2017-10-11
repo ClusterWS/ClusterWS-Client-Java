@@ -1,261 +1,153 @@
-package com.Yegorisa.clusterws;
+package com.Yegorisa.ClusterWS;
 
 import com.neovisionaries.ws.client.*;
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
 import java.util.logging.Logger;
 
 /**
- * <p>
- * <h3>ClusterWS</h3>
- * </p>
- * <p>
- * Cluster
- * </p>
- *
- * @author Egor Egorov
+ * Created by Egor on 06.10.2017.
  */
 
 public class ClusterWS {
     private static final Logger LOGGER = Logger.getLogger(ClusterWS.class.getName());
 
-    private boolean mConnectAsynchronous;
+    private boolean mIsConnectedAsynchronously;
 
     private Options mOptions;
-    private Emitter mEmitter;
-    private BasicListener mBasicListener;
+    private ClusterWSListener mClusterWSListener;
     private WebSocket mWebSocket;
+    private Emitter mEmitter;
     private ArrayList<Channel> mChannels;
+    private Message mMessageHandler;
 
+    //Ping
     private Timer mPingTimer;
-    private Integer mLost;
+    private int mLost;
 
     private Reconnection mReconnectionHandler;
 
-    /**
-     * <p></p>
-     * Returns new {@code ClusterWS} instance.
-     * <p>
-     *
-     * @param url                  the URI of the WebSocket endpoint on the server side. Must be provided.
-     * @param port                 the port of the WebSocket endpoint on the server side. Must be provided.
-     * @param autoReconnect        if you want to auto reconnect {@code true}, and {@code false} if you do not. Default false.
-     * @param reconnectionInterval the number of milliseconds between each reconnect attempt. Default 5000 milliseconds.
-     * @param reconnectionAttempts the number of reconnect attempts. Default 0.
-     *                             </p>
-     *                             <p>
-     * @throws NullPointerException     the given URI is {@code null} or the port is {@code null}.
-     * @throws IllegalArgumentException the given URI violates RFC 2396.
-     *                                  </p>
-     *                                  <p>
-     * @since 1.0
-     * </p>
-     */
-
-    public ClusterWS(@NotNull String url, @NotNull Integer port, @Nullable Boolean autoReconnect, @Nullable Integer reconnectionInterval, @Nullable Integer reconnectionAttempts) {
+    public ClusterWS(@NotNull String url, @NotNull String port) {
+        mOptions = new Options(url, port);
         mEmitter = new Emitter();
-        mOptions = new Options(url, port, autoReconnect, reconnectionInterval, reconnectionAttempts);
         mChannels = new ArrayList<>();
-        mReconnectionHandler = new Reconnection();
-        mReconnectionHandler.setAutoReconnect(autoReconnect);
-        mLost = 0;
-
+        mMessageHandler = new Message();
+        mReconnectionHandler = new Reconnection(null,null,null,null,this);
         create();
     }
 
     private void create() {
         try {
-            mWebSocket = new WebSocketFactory().createSocket("ws://" + mOptions.getUrl() + ":" + mOptions.getPort());
-            mWebSocket.addListener(new WebSocketAdapter() {
-                @Override
-                public void onConnected(WebSocket websocket, Map<String, List<String>> headers) throws Exception {
-                    mPingTimer = new Timer();
-                    mReconnectionHandler.onConnected();
-                    for (Channel channel :
-                            mChannels) {
-                        channel.subscribe();
-                    }
-                    mBasicListener.onConnected(ClusterWS.this);
-                }
-
-                @Override
-                public void onConnectError(WebSocket websocket, WebSocketException cause) throws Exception {
-                    mBasicListener.onConnectError(ClusterWS.this, cause);
-                    if (mReconnectionHandler.getAutoReconnect()) {
-                        if (!mReconnectionHandler.isInReconnectionState()) {
-                            mReconnectionHandler.reconnect(ClusterWS.this);
+            mWebSocket = new WebSocketFactory()
+                    .createSocket("ws://" + mOptions.getUrl() + ":" + mOptions.getPort())
+                    .addListener(new WebSocketAdapter() {
+                        @Override
+                        public void onConnected(WebSocket websocket, Map<String, List<String>> headers) throws Exception {
+                            mReconnectionHandler.onConnected();
+                            if (mClusterWSListener != null) {
+                                mClusterWSListener.onConnected(ClusterWS.this);
+                            }
                         }
-                    }
-                }
 
-                @Override
-                public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) throws Exception {
-                    if (mPingTimer != null) {
-                        mPingTimer.cancel();
-                        mPingTimer = null;
-                        mLost = 0;
-                    }
-                    mBasicListener.onDisconnected(ClusterWS.this, serverCloseFrame, clientCloseFrame, closedByServer);
-                    if (serverCloseFrame == null) {
-                        serverCloseFrame = new WebSocketFrame().setCloseFramePayload(1006, "Unknown");
-                    }
-                    if (clientCloseFrame == null) {
-                        clientCloseFrame = new WebSocketFrame().setCloseFramePayload(1006, "Unknown");
-                    }
-                    System.out.println(clientCloseFrame.getCloseCode());
-                    System.out.println(serverCloseFrame.getCloseCode());
+                        @Override
+                        public void onConnectError(WebSocket websocket, WebSocketException exception) throws Exception {
+                            if (mReconnectionHandler.isAutoReconnect() && !mReconnectionHandler.isInReconnectionState()){
+                                mReconnectionHandler.reconnect(ClusterWS.this);
+                            }
+                            if (mClusterWSListener != null) {
+                                mClusterWSListener.onConnectError(ClusterWS.this, exception);
+                            }
 
-                    if (mReconnectionHandler.getAutoReconnect() && serverCloseFrame.getCloseCode() != 1000 && clientCloseFrame.getCloseCode() != 1000) {
-                        if (!mReconnectionHandler.isInReconnectionState()) {
-
-                            mReconnectionHandler.reconnect(ClusterWS.this);
                         }
-                    }
-                }
 
-                @Override
-                public void onTextMessage(WebSocket websocket, String message) throws Exception {
-                    LOGGER.info(message);
-                    if (message.equals("#0")) {
-                        mLost = 0;
-                        send("#1", null, "ping");
-                        return;
-                    }
-                    Message.messageDecode(ClusterWS.this, message);
-                }
-            });
+                        @Override
+                        public void onTextMessage(WebSocket websocket, String text) throws Exception {
+                            if (text.equals("#0")) {
+                                mLost = 0;
+                                send("#1", null, "ping");
+                            } else {
+                                mMessageHandler.messageDecode(ClusterWS.this, text);
+                            }
+                        }
+
+                        @Override
+                        public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) throws Exception {
+                            mLost = 0;
+                            if (mPingTimer != null){
+                                mPingTimer.cancel();
+                                mPingTimer = new Timer();
+                            }
+
+                            if (serverCloseFrame == null) {
+                                serverCloseFrame = new WebSocketFrame().setCloseFramePayload(1006, "Unknown");
+                            }
+                            if (clientCloseFrame == null) {
+                                clientCloseFrame = new WebSocketFrame().setCloseFramePayload(1006, "Unknown");
+                            }
+                            if (mReconnectionHandler.isAutoReconnect() && serverCloseFrame.getCloseCode() != 1000 && clientCloseFrame.getCloseCode() != 1000) {
+                                if (!mReconnectionHandler.isInReconnectionState()) {
+                                    mReconnectionHandler.reconnect(ClusterWS.this);
+                                }
+                            }
+
+                            if (mClusterWSListener != null) {
+                                mClusterWSListener.onDisconnected(ClusterWS.this, serverCloseFrame, clientCloseFrame, closedByServer);
+                            }
+                        }
+
+                    });
+
         } catch (IOException e) {
-            LOGGER.warning(e.getMessage());
+            LOGGER.severe("Failed to create a socket. Or, HTTP proxy handshake or SSL handshake failed.");
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("The given URI violates RFC 2396. " + e.getMessage());
         }
     }
 
-
-    /**
-     * <p></p>
-     * Sets listener to receive event on this socket.
-     * <p>
-     *
-     * @param event    the name of the event which will be emitted from the server.
-     * @param listener a listener to add.
-     *                 </p>
-     *                 <p>
-     * @throws NullPointerException The given event name is {@code null}.
-     *                              </p>
-     *                              <p>
-     * @since 1.0
-     * </p>
-     */
-
-    public void on(@NotNull String event, Emitter.Listener listener) {
-        if (event == null) {
-            throw new NullPointerException("The event name must be provided");
-        }
-        mEmitter.on(event, listener);
+    public void setReconnection(@Nullable Boolean autoReconnect, @Nullable Integer reconnectionIntervalMin,@Nullable Integer reconnectionIntervalMax, @Nullable Integer reconnectionAttempts){
+        mReconnectionHandler = new Reconnection(autoReconnect,reconnectionIntervalMin,reconnectionIntervalMax,reconnectionAttempts,this);
     }
-
-    /**
-     * <p></P>
-     * Connect to the server with the provided url and port
-     * <p>
-     * If {@code connect()} failed,
-     * {@link BasicListener#onConnectError(ClusterWS, WebSocketException)} method is called.
-     * </P>
-     * <p>
-     * Note that this method can be called at most only once regardless of
-     * whether this method succeeded or failed. If you want to re-connect to
-     * the WebSocket endpoint, you have to create a new {@code WebSocket}
-     * instance again by  {@code new ClusterWS} constructor of a
-     * {@link ClusterWS}.
-     * </p>
-     * <p>
-     *
-     * @since 1.0
-     * </p>
-     */
 
     public void connect() {
         try {
-            mWebSocket = mWebSocket.recreate();
+            mIsConnectedAsynchronously = false;
+            create();
             mWebSocket.connect();
-            mConnectAsynchronous = false;
         } catch (WebSocketException e) {
-            mBasicListener.onConnectError(this, e);
-        } catch (IOException e) {
-            LOGGER.severe(e.getMessage());
+            if (mReconnectionHandler.isAutoReconnect() && !mReconnectionHandler.isInReconnectionState()){
+                mReconnectionHandler.reconnect(ClusterWS.this);
+            }
+            if (mClusterWSListener != null) {
+                mClusterWSListener.onConnectError(ClusterWS.this, e);
+            }
         }
     }
 
-    /**
-     * <p></P>
-     * Executes {@link #connect()} asynchronous by creating a new thread and
-     * calling {@code connect()} in the thread.
-     * <p>
-     * If {@code connect()} failed,
-     * {@link BasicListener#onConnectError(ClusterWS, WebSocketException)}
-     * method is called.
-     * </p>
-     * <p>
-     *
-     * @since 1.0
-     * </p>
-     */
-
-    public void connectAsynchronous() {
-        try {
-            mWebSocket = mWebSocket.recreate();
-            mConnectAsynchronous = true;
-            mWebSocket.connectAsynchronously();
-        } catch (IOException e) {
-            LOGGER.severe(e.getMessage());
-        }
-
+    public void connectAsynchronously() {
+        mIsConnectedAsynchronously = true;
+        create();
+        mWebSocket.connectAsynchronously();
     }
 
-    /**
-     * <p></p>
-     * Sending message with data to a server
-     * <p>
-     *
-     * @param event the name of the event which will be emitted to the server.
-     * @param data  a data which will be sent to a server.
-     *              </p>
-     *              <p>
-     * @throws NullPointerException The given event name is {@code null}.
-     *                              </p>
-     *                              <p>
-     * @since 1.0
-     * </p>
-     */
+    public void setClusterWSListener(ClusterWSListener clusterWSListener) {
+        mClusterWSListener = clusterWSListener;
+    }
+
+    public void on(String event, EmitterListener listener) {
+        mEmitter.on(event, listener);
+    }
 
     public void send(String event, Object data) {
-        if (event == null) {
-            throw new NullPointerException("Event name must be provided");
-        }
-        mWebSocket.sendText(Message.messageEncode(event, data, "emit"));
+        mWebSocket.sendText(mMessageHandler.messageEncode(event, data, "emit"));
     }
 
-    /**
-     * <p></p>
-     * Subscribing to the channel
-     * <p>
-     *
-     * @param channelName the name of the channel to subscribe.
-     *                    </p>
-     *                    <p>
-     * @throws NullPointerException The given channel name is {@code null}.
-     *                              </p>
-     *                              <p>
-     * @since 1.0
-     * </p>
-     */
-
-    public Channel subscribe(String channelName) {
-        if (channelName == null) {
-            throw new NullPointerException("Channel name must be provided");
-        }
+    public Channel subscribe(String channelName){
         for (Channel channel :
                 mChannels) {
             if (channel.getChannelName().equals(channelName)) {
@@ -267,131 +159,15 @@ public class ClusterWS {
         return newChannel;
     }
 
-    /**
-     * <p></p>
-     * Setting three basic listeners:
-     * <p>
-     * {@link BasicListener#onConnected(ClusterWS)}
-     * </p>
-     * <p>
-     * {@link BasicListener#onConnectError(ClusterWS, WebSocketException)}
-     * </p>
-     * <p>
-     * {@link BasicListener#onDisconnected(ClusterWS, WebSocketFrame, WebSocketFrame, boolean)}
-     * </p>
-     * <p>
-     *
-     * @param basicListener Listeners to add. {@code null} is silently ignored.
-     *                      </p>
-     *                      <p>
-     * @since 1.0
-     * </p>
-     */
-
-    public void setBasicListener(BasicListener basicListener) {
-        mBasicListener = basicListener;
-    }
-
-    /**
-     * <p></p>
-     * <p>
-     * Get the current state of this ClusterWS.
-     * </p>
-     * <p>
-     * <p>
-     * The initial state is {@link WebSocketState#CREATED CREATED}.
-     * When {@link #connect()} is called, the state is changed to
-     * {@link WebSocketState#CONNECTING CONNECTING}, and then to
-     * {@link WebSocketState#OPEN OPEN} after a successful opening
-     * handshake. The state is changed to {@link
-     * WebSocketState#CLOSING CLOSING} when a closing handshake
-     * is started, and then to {@link WebSocketState#CLOSED CLOSED}
-     * when the closing handshake finished.
-     * </p>
-     * <p>
-     * <p>
-     * See the description of {@link WebSocketState} for details.
-     * </p>
-     * <p>
-     *
-     * @return The current state.
-     * </p>
-     * <p>
-     * @see WebSocketState
-     * @since 1.0
-     * </p>
-     */
-
     public WebSocketState getState() {
         return mWebSocket.getState();
     }
-
-    /**
-     * <p></p>
-     * <p>
-     * Disconnects the WebSocket.
-     * </p>
-     * <p>
-     * See the description of {@link WebSocketState} for details.
-     * </p>
-     * <p>
-     *
-     * @param closeCode the reason for disconnect in number
-     * @param reason    the string reason
-     *                  which this WebSocket client will send to the server. Note that
-     *                  the length of the bytes which represents the given reason must
-     *                  not exceed 125. In other words, {@code (reason.}{@link
-     *                  String#getBytes(String) getBytes}{@code ("UTF-8").length <= 125)}
-     *                  must be true.
-     *                  </p>
-     *                  <p>
-     * @see WebSocketCloseCode
-     * @see <a href="https://tools.ietf.org/html/rfc6455#section-5.5.1">RFC 6455, 5.5.1. Close</a>
-     * <p>
-     * @since 1.0
-     * </p>
-     */
-
-    public void disconnect(Integer closeCode, String reason) {
-        mWebSocket.disconnect(closeCode == null ? 1000 : closeCode, reason);
-    }
-
-    /**
-     * <p></p>
-     * <p>
-     * Returns the array of channels
-     * </p>
-     * <p>
-     *
-     * @return the array of channels
-     * </p>
-     * <p>
-     * @since 1.0
-     * </p>
-     */
 
     public ArrayList<Channel> getChannels() {
         return mChannels;
     }
 
-    /**
-     * <p></p>
-     * <p>
-     * Returns the channel by name
-     * </p>
-     * <p>
-     *
-     * @param channelName the name of the channel
-     *                    </p>
-     *                    <p>
-     * @return {@link Channel}
-     * </p>
-     * <p>
-     * @since 1.0
-     * </p>
-     */
-
-    public Channel getChannel(String channelName) {
+    public Channel getChannelByName(String channelName){
         for (Channel channel :
                 mChannels) {
             if (channel.getChannelName().equals(channelName)) {
@@ -401,20 +177,27 @@ public class ClusterWS {
         return null;
     }
 
+    public void disconnect(Integer closeCode, String reason) {
+        mWebSocket.disconnect(closeCode == null ? 1000 : closeCode, reason);
+    }
+
+    void send(String event, Object data, String type) {
+        mWebSocket.sendText(mMessageHandler.messageEncode(event, data, type));
+    }
+
     Emitter getEmitter() {
         return mEmitter;
     }
 
-    void send(String event, Object data, String type) {
-        mWebSocket.sendText(Message.messageEncode(event, data, type));
+    void setChannels(ArrayList<Channel> channels) {
+        mChannels = channels;
     }
-
 
     Timer getPingTimer() {
         return mPingTimer;
     }
 
-    Integer getLost() {
+    int getLost() {
         return mLost;
     }
 
@@ -422,11 +205,7 @@ public class ClusterWS {
         mLost++;
     }
 
-    Options getOptions() {
-        return mOptions;
-    }
-
-    boolean isConnectAsynchronous() {
-        return mConnectAsynchronous;
+    boolean isConnectedAsynchronously() {
+        return mIsConnectedAsynchronously;
     }
 }

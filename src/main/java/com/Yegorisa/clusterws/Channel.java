@@ -1,26 +1,27 @@
-package com.Yegorisa.clusterws;
+package com.Yegorisa.ClusterWS;
 
 import java.util.ArrayList;
 
 /**
- * Created by Egor on 03.10.2017.
+ * Created by Egor on 08.10.2017.
  */
 public class Channel {
-    private Emitter.Listener mListener;
+    public interface ChannelListener {
+        void onDataReceived(String channelName, Object data);
+    }
+
+    private ChannelListener mChannelListener;
     private String mChannelName;
     private ClusterWS mSocket;
 
-    Channel(String channelName, ClusterWS socket) {
-        if (channelName == null) {
-            throw new NullPointerException("Channel name must be provided");
-        }
+    public Channel(String channelName, ClusterWS socket) {
         mChannelName = channelName;
         mSocket = socket;
         subscribe();
     }
 
-    public Channel watch(Emitter.Listener listener) {
-        mListener = listener;
+    public Channel watch(ChannelListener listener) {
+        mChannelListener = listener;
         return this;
     }
 
@@ -29,11 +30,11 @@ public class Channel {
         return this;
     }
 
-    //TODO фикс удаление каналов
     public void unsubscribe() {
         mSocket.send("unsubscribe", mChannelName, "system");
         ArrayList<Channel> channelArrayList = mSocket.getChannels();
         channelArrayList.remove(this);
+        mSocket.setChannels(channelArrayList);
     }
 
     String getChannelName() {
@@ -41,13 +42,12 @@ public class Channel {
     }
 
     void onMessage(Object data) {
-        if (mListener != null) {
-            mListener.call(mChannelName, data);
+        if (mChannelListener != null) {
+            mChannelListener.onDataReceived(mChannelName, data);
         }
     }
 
     void subscribe() {
         mSocket.send("subscribe", mChannelName, "system");
     }
-
 }

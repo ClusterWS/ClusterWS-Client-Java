@@ -1,32 +1,30 @@
-package com.Yegorisa.clusterws;
+package com.Yegorisa.ClusterWS;
 
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Created by Egor on 01.10.2017.
+ * Created by Egor on 07.10.2017.
  */
-public class Emitter {
-    public interface Listener {
-        void call(String name, Object data);
-    }
 
-    private ConcurrentHashMap<String, Listener> mEvents;
+class Emitter {
+    private ConcurrentHashMap<String, EmitterListener> mEvents;
 
     Emitter() {
         mEvents = new ConcurrentHashMap<>();
     }
 
-    void on(String event, Listener fn) {
+    void on(String event, EmitterListener listener) {
         if (mEvents.containsKey(event)) {
-            mEvents.remove(event);
+            mEvents.replace(event,listener);
+        } else {
+            mEvents.put(event, listener);
         }
-        mEvents.put(event, fn);
     }
 
     void emit(String event, Object object) {
-        Listener listener = mEvents.get(event);
+        EmitterListener listener = mEvents.get(event);
         if (listener != null) {
-            listener.call(event, object);
+            listener.onDataReceived(object);
         }
     }
 
