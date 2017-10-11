@@ -161,6 +161,6 @@ clusterWS.getChannelByName('channel name').unsubscribe();
 * [Medium ClusterWS](https://medium.com/clusterws)
 
 
-####*Docs is still under development.*
+#### *Docs is still under development.*
 
-##Good luck and Have fun :balloon: :running:
+## Good luck and Have fun :balloon: :running:
