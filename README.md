@@ -1,11 +1,11 @@
 # ClusterWS Client Java
 
 ## Overview
-This is official Java client for [ClusterWS](https://github.com/goriunov/ClusterWS).
+This is official Java client for [ClusterWS](https://github.com/ClusterWS/ClusterWS).
 
-[ClusterWS](https://github.com/goriunov/ClusterWS) - is a minimal **Node JS http & real-time** framework which allows to scale WebSocket ([uWS](https://github.com/uNetworking/uWebSockets) - one of the fastest WebSocket libraries) between **Workers** in [Node JS Cluster](https://nodejs.org/api/cluster.html) and utilize all available CPU.
+[ClusterWS](https://github.com/ClusterWS/ClusterWS) - is a minimal **Node JS http & real-time** framework which allows to scale WebSocket ([uWS](https://github.com/uNetworking/uWebSockets) - one of the fastest WebSocket libraries) between **Workers** in [Node JS Cluster](https://nodejs.org/api/cluster.html) and utilize all available CPU.
 
-**This library requires [ClusterWS](https://github.com/goriunov/ClusterWS) on the server**
+**This library requires [ClusterWS](https://github.com/ClusterWS/ClusterWS) on the server**
 
 ## Installation
 
