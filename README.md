@@ -8,23 +8,7 @@ This is official Java client for [ClusterWS](https://github.com/ClusterWS/Cluste
 **This library requires [ClusterWS](https://github.com/ClusterWS/ClusterWS) on the server**
 
 ## Installation
-
-### Gradle
-
-```Gradle
-dependencies {
-    compile 'com.neovisionaries:nv-websocket-client:2.3'
-}
-```
-### Maven
-
-```xml
-<dependency>
-    <groupId>com.neovisionaries</groupId>
-    <artifactId>nv-websocket-client</artifactId>
-    <version>2.3</version>
-</dependency>
-```
+### In preparation
 
 
 ## Socket
