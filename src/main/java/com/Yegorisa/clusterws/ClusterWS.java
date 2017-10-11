@@ -1,8 +1,6 @@
 package com.Yegorisa.ClusterWS;
 
 import com.neovisionaries.ws.client.*;
-import com.sun.istack.internal.NotNull;
-import com.sun.istack.internal.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,12 +31,12 @@ public class ClusterWS {
 
     private Reconnection mReconnectionHandler;
 
-    public ClusterWS(@NotNull String url, @NotNull String port) {
+    public ClusterWS(String url, String port) {
         mOptions = new Options(url, port);
         mEmitter = new Emitter();
         mChannels = new ArrayList<>();
         mMessageHandler = new Message();
-        mReconnectionHandler = new Reconnection(null,null,null,null,this);
+        mReconnectionHandler = new Reconnection(null, null, null, null, this);
         create();
     }
 
@@ -57,7 +55,7 @@ public class ClusterWS {
 
                         @Override
                         public void onConnectError(WebSocket websocket, WebSocketException exception) throws Exception {
-                            if (mReconnectionHandler.isAutoReconnect() && !mReconnectionHandler.isInReconnectionState()){
+                            if (mReconnectionHandler.isAutoReconnect() && !mReconnectionHandler.isInReconnectionState()) {
                                 mReconnectionHandler.reconnect(ClusterWS.this);
                             }
                             if (mClusterWSListener != null) {
@@ -79,7 +77,7 @@ public class ClusterWS {
                         @Override
                         public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) throws Exception {
                             mLost = 0;
-                            if (mPingTimer != null){
+                            if (mPingTimer != null) {
                                 mPingTimer.cancel();
                                 mPingTimer = new Timer();
                             }
@@ -110,8 +108,8 @@ public class ClusterWS {
         }
     }
 
-    public void setReconnection(@Nullable Boolean autoReconnect, @Nullable Integer reconnectionIntervalMin,@Nullable Integer reconnectionIntervalMax, @Nullable Integer reconnectionAttempts){
-        mReconnectionHandler = new Reconnection(autoReconnect,reconnectionIntervalMin,reconnectionIntervalMax,reconnectionAttempts,this);
+    public void setReconnection(Boolean autoReconnect, Integer reconnectionIntervalMin, Integer reconnectionIntervalMax, Integer reconnectionAttempts) {
+        mReconnectionHandler = new Reconnection(autoReconnect, reconnectionIntervalMin, reconnectionIntervalMax, reconnectionAttempts, this);
     }
 
     public void connect() {
@@ -120,7 +118,7 @@ public class ClusterWS {
             create();
             mWebSocket.connect();
         } catch (WebSocketException e) {
-            if (mReconnectionHandler.isAutoReconnect() && !mReconnectionHandler.isInReconnectionState()){
+            if (mReconnectionHandler.isAutoReconnect() && !mReconnectionHandler.isInReconnectionState()) {
                 mReconnectionHandler.reconnect(ClusterWS.this);
             }
             if (mClusterWSListener != null) {
@@ -147,7 +145,7 @@ public class ClusterWS {
         mWebSocket.sendText(mMessageHandler.messageEncode(event, data, "emit"));
     }
 
-    public Channel subscribe(String channelName){
+    public Channel subscribe(String channelName) {
         for (Channel channel :
                 mChannels) {
             if (channel.getChannelName().equals(channelName)) {
@@ -167,7 +165,7 @@ public class ClusterWS {
         return mChannels;
     }
 
-    public Channel getChannelByName(String channelName){
+    public Channel getChannelByName(String channelName) {
         for (Channel channel :
                 mChannels) {
             if (channel.getChannelName().equals(channelName)) {
