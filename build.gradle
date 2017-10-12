@@ -2,7 +2,6 @@ group 'com.github.ClusterWS'
 version '1.1.0'
 
 apply plugin: 'java'
-apply plugin: 'maven'
 
 sourceCompatibility = 1.7
 
@@ -10,25 +9,16 @@ repositories {
     maven {
         url("https://plugins.gradle.org/m2/")
     }
+    repositories {
+        jcenter()
+    }
 }
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     compile 'com.neovisionaries:nv-websocket-client:2.3'
     compile group: 'org.json', name: 'json', version: '20170516'
+    compile 'com.github.ClusterWS:ClusterWS-Client-Java:-SNAPSHOT'
+
 }
 
-task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
-
-artifacts {
-    archives sourcesJar
-    archives javadocJar
-}

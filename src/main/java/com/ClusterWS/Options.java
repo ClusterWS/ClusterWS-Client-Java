@@ -1,4 +1,4 @@
-package com.Yegorisa.ClusterWS;
+package com.ClusterWS;
 
 /**
  * Created by Egor on 06.10.2017.

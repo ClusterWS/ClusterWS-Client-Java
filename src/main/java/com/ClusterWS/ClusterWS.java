@@ -1,4 +1,4 @@
-package com.Yegorisa.ClusterWS;
+package com.ClusterWS;
 
 import com.neovisionaries.ws.client.*;
 
@@ -10,7 +10,8 @@ import java.util.Timer;
 import java.util.logging.Logger;
 
 /**
- * Created by Egor on 06.10.2017.
+ * Not casual
+ * I hope work
  */
 
 public class ClusterWS {

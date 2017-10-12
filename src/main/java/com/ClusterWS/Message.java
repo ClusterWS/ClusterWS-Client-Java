@@ -1,4 +1,4 @@
-package com.Yegorisa.ClusterWS;
+package com.ClusterWS;
 
 import org.json.JSONArray;
 import org.json.JSONObject;

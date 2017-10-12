@@ -1,4 +1,4 @@
-package com.Yegorisa.ClusterWS;
+package com.ClusterWS;
 
 import com.neovisionaries.ws.client.WebSocketState;
 
