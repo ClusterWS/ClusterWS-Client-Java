@@ -3,7 +3,7 @@ version '1.1.0'
 apply plugin: 'java'
 apply plugin: 'maven'
 
-sourceCompatibility = 1.7
+sourceCompatibility = 1.8
 
 group 'com.github.ClusterWS'
 
@@ -19,8 +19,6 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     compile 'com.neovisionaries:nv-websocket-client:2.3'
     compile group: 'org.json', name: 'json', version: '20170516'
-    compile 'com.github.ClusterWS:ClusterWS-Client-Java:-SNAPSHOT'
-
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
