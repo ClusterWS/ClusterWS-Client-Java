@@ -1,4 +1,4 @@
-group 'com.github.Yegorisa'
+group 'com.github.ClusterWS'
 version '1.1.0'
 
 apply plugin: 'java'
@@ -16,4 +16,19 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     compile 'com.neovisionaries:nv-websocket-client:2.3'
     compile group: 'org.json', name: 'json', version: '20170516'
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
 }
