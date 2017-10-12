@@ -1,4 +1,4 @@
-package com.ClusterWS;
+package com.ClusterWS.ClusterWSLib;
 
 /**
  * Created by Egor on 07.10.2017.

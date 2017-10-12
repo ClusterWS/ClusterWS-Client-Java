@@ -1,4 +1,4 @@
-package com.ClusterWS;
+package com.ClusterWS.ClusterWSLib;
 
 import java.util.concurrent.ConcurrentHashMap;
 

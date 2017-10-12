@@ -1,4 +1,4 @@
-package com.ClusterWS;
+package com.ClusterWS.ClusterWSLib;
 
 import com.neovisionaries.ws.client.WebSocketException;
 import com.neovisionaries.ws.client.WebSocketFrame;
