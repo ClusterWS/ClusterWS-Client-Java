@@ -6,12 +6,13 @@ apply plugin: 'maven'
 
 sourceCompatibility = 1.7
 
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.9'
+}
+
 repositories {
     maven {
         url("https://plugins.gradle.org/m2/")
-    }
-    repositories {
-        jcenter()
     }
 }
 
@@ -21,5 +22,11 @@ dependencies {
     compile group: 'org.json', name: 'json', version: '20170516'
     compile 'com.github.ClusterWS:ClusterWS-Client-Java:-SNAPSHOT'
 
+}
+
+allprojects {
+    repositories {
+        jcenter()
+    }
 }
 
