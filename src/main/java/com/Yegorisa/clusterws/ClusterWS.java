@@ -31,6 +31,12 @@ public class ClusterWS {
 
     private Reconnection mReconnectionHandler;
 
+    /**
+     * test
+     * @param url
+     * @param port
+     */
+
     public ClusterWS(String url, String port) {
         mOptions = new Options(url, port);
         mEmitter = new Emitter();
