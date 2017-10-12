@@ -2,6 +2,7 @@ group 'com.github.ClusterWS'
 version '1.1.0'
 
 apply plugin: 'java'
+apply plugin: 'maven'
 
 sourceCompatibility = 1.7
 
