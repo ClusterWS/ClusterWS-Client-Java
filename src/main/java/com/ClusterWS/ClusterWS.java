@@ -35,6 +35,7 @@ public class ClusterWS {
 
     /**
      * test
+     *
      * @param url
      * @param port
      */
@@ -93,13 +94,16 @@ public class ClusterWS {
                             if (serverCloseFrame == null) {
                                 serverCloseFrame = new WebSocketFrame().setCloseFramePayload(1006, "Unknown");
                             }
+
                             if (clientCloseFrame == null) {
                                 clientCloseFrame = new WebSocketFrame().setCloseFramePayload(1006, "Unknown");
                             }
+                            if (mReconnectionHandler.isInReconnectionState()) {
+                                return;
+                            }
+
                             if (mReconnectionHandler.isAutoReconnect() && serverCloseFrame.getCloseCode() != 1000 && clientCloseFrame.getCloseCode() != 1000) {
-                                if (!mReconnectionHandler.isInReconnectionState()) {
-                                    mReconnectionHandler.reconnect(ClusterWS.this);
-                                }
+                                mReconnectionHandler.reconnect(ClusterWS.this);
                             }
 
                             if (mClusterWSListener != null) {
