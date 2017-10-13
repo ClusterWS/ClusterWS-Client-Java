@@ -1,4 +1,0 @@
-Manifest-Version: 1.0
-Main-Class: C:\Users\Egor\IdeaProjects\ClusterWS-Client-Java-1.1.0 new
-  company\ClusterWS-Client-Java\src\main\java
-

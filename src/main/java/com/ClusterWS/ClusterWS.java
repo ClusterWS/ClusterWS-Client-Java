@@ -9,11 +9,6 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.logging.Logger;
 
-/**
- * Not casual
- * I hope work
- */
-
 public class ClusterWS {
     private static final Logger LOGGER = Logger.getLogger(ClusterWS.class.getName());
 
@@ -32,13 +27,6 @@ public class ClusterWS {
     private int mLost;
 
     private Reconnection mReconnectionHandler;
-
-    /**
-     * test
-     *
-     * @param url
-     * @param port
-     */
 
     public ClusterWS(String url, String port) {
         mOptions = new Options(url, port);
