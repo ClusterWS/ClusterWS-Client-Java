@@ -130,13 +130,16 @@ Channel channel = clusterWS.subscribe("channel name").watch(new Channel.ChannelL
     }
 }).publish(data);
 
-
 /**
     You can get channel by channel name only if you were subscribed before
 */
 
-clusterWS.getChannelByName('channel name').publish(data);
-clusterWS.getChannelByName('channel name').unsubscribe();
+clusterWS.getChannelByName("channel name");
+
+/**
+    You can get all channels as an array by using getChannels method
+*/
+clusterWS.getChannels();
 ```
 
 **To make sure that user is connected to the server before subscribing, do it on `onConnected` event or on any other events which you emit from the server, otherwise subscription may not work properly**
