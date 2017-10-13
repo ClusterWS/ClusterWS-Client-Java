@@ -145,6 +145,6 @@ clusterWS.getChannelByName('channel name').unsubscribe();
 * [Medium ClusterWS](https://medium.com/clusterws)
 
 
-#### *Docs is still under development.*
+#### *Docs are still under development. If you have found any errors please submit pull request or leave issue*
 
 ## Good luck and Have fun :balloon: :running:

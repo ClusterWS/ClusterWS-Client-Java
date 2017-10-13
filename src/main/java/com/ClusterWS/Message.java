@@ -1,4 +1,4 @@
-package com.ClusterWS.ClusterWSLib;
+package com.ClusterWS;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
