@@ -20,7 +20,6 @@ public class ClusterWS {
     private Emitter mEmitter;
     private ArrayList<Channel> mChannels;
     private Message mMessageHandler;
-    private boolean testVariable;
 
     //Ping
     private Timer mPingTimer;

@@ -1,4 +1,5 @@
 # ClusterWS Client Java
+[![](https://jitpack.io/v/ClusterWS/ClusterWS-Client-Java.svg)](https://jitpack.io/#ClusterWS/ClusterWS-Client-Java)
 
 ## Overview
 This is official Java client for [ClusterWS](https://github.com/ClusterWS/ClusterWS).
@@ -8,7 +9,37 @@ This is official Java client for [ClusterWS](https://github.com/ClusterWS/Cluste
 **This library requires [ClusterWS](https://github.com/ClusterWS/ClusterWS) on the server**
 
 ## Installation
-### In preparation
+### Maven
+
+```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+
+<dependency>
+    <groupId>com.github.ClusterWS</groupId>
+    <artifactId>ClusterWS-Client-Java</artifactId>
+    <version>1.1.1</version>
+</dependency>
+```
+
+
+### Gradle
+
+```Gradle
+allprojects {
+    repositories {
+        maven { url 'https://jitpack.io' }
+    }
+}
+	
+dependencies {
+    compile 'com.github.ClusterWS:ClusterWS-Client-Java:1.1.1'
+}
+```
 
 
 ## Socket
