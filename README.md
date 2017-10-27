@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
- <a title="NPM Version" href="https://jitpack.io/#ClusterWS/ClusterWS-Client-Java"><img src="https://jitpack.io/v/ClusterWS/ClusterWS-Client-Java.svg"></a>
+ <a title="JitPack Version" href="https://jitpack.io/#ClusterWS/ClusterWS-Client-Java"><img src="https://jitpack.io/v/ClusterWS/ClusterWS-Client-Java.svg"></a>
 </p>
 
 ## Overview
