@@ -1,5 +1,13 @@
-# ClusterWS Client Java
-[![](https://jitpack.io/v/ClusterWS/ClusterWS-Client-Java.svg)](https://jitpack.io/#ClusterWS/ClusterWS-Client-Java)
+<h1 align="center">ClusterWS Java Client</h1> 
+<h6 align="center">WebSocket & Node JS Cluster</h6>
+
+<p align="center">
+    <img alt="Node.js" src="http://u.cubeupload.com/goriunovd/clusterWS.png" width="560"/>
+</p>
+
+<p align="center">
+ <a title="NPM Version" href="https://jitpack.io/#ClusterWS/ClusterWS-Client-Java"><img src="https://jitpack.io/v/ClusterWS/ClusterWS-Client-Java.svg"></a>
+</p>
 
 ## Overview
 This is official Java client for [ClusterWS](https://github.com/ClusterWS/ClusterWS).
