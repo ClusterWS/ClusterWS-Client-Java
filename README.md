@@ -30,7 +30,7 @@ This is official Java client for [ClusterWS](https://github.com/ClusterWS/Cluste
 <dependency>
     <groupId>com.github.ClusterWS</groupId>
     <artifactId>ClusterWS-Client-Java</artifactId>
-    <version>1.1.1</version>
+    <version>1.2.1</version>
 </dependency>
 ```
 
@@ -45,7 +45,7 @@ allprojects {
 }
 	
 dependencies {
-    compile 'com.github.ClusterWS:ClusterWS-Client-Java:1.1.1'
+    compile 'com.github.ClusterWS:ClusterWS-Client-Java:1.2.1'
 }
 ```
 
