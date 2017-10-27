@@ -3,10 +3,6 @@ package com.ClusterWS;
 import com.neovisionaries.ws.client.WebSocketException;
 import com.neovisionaries.ws.client.WebSocketFrame;
 
-/**
- * Created by Egor on 06.10.2017.
- */
-
 public interface ClusterWSListener {
     void onConnected(ClusterWS socket);
 

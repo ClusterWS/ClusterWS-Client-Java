@@ -2,9 +2,6 @@ package com.ClusterWS;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Created by Egor on 07.10.2017.
- */
 
 class Emitter {
     private ConcurrentHashMap<String, EmitterListener> mEvents;

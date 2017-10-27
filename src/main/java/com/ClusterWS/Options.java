@@ -1,8 +1,5 @@
 package com.ClusterWS;
 
-/**
- * Created by Egor on 06.10.2017.
- */
 class Options {
     private String mUrl;
     private String mPort;

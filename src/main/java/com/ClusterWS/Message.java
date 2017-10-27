@@ -6,9 +6,6 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.TimerTask;
 
-/**
- * Created by Egor on 06.10.2017.
- */
 class Message {
     String messageEncode(String event, Object data, String type) {
         JSONObject jsonObject = new JSONObject();

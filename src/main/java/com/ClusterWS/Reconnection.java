@@ -7,9 +7,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ThreadLocalRandom;
 
-/**
- * Created by Egor on 07.10.2017.
- */
 class Reconnection {
     private final boolean mAutoReconnect;
     private final int mReconnectionIntervalMin;

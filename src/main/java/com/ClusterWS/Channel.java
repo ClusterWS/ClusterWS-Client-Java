@@ -2,9 +2,6 @@ package com.ClusterWS;
 
 import java.util.ArrayList;
 
-/**
- * Created by Egor on 08.10.2017.
- */
 public class Channel {
     public interface ChannelListener {
         void onDataReceived(String channelName, Object data);
