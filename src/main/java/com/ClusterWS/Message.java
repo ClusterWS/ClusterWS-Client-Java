@@ -32,16 +32,15 @@ class Message {
         }
     }
 
-    void messageDecode(final ClusterWS socket, String message){
-        System.out.println("Message is " + message);
+    void messageDecode(final ClusterWS socket, String message) {
         JSONArray jsonArray = new JSONObject(message).getJSONArray("#");
-        switch (jsonArray.getString(0)){
+        switch (jsonArray.getString(0)) {
             case "p":
                 ArrayList<Channel> channels = socket.getChannels();
                 String channelName = jsonArray.getString(1);
-                for (Channel channel:
-                     channels) {
-                    if (channel.getChannelName().equals(channelName)){
+                for (Channel channel :
+                        channels) {
+                    if (channel.getChannelName().equals(channelName)) {
                         channel.onMessage(jsonArray.get(2));
                         break;
                     }
@@ -51,18 +50,23 @@ class Message {
                 socket.getEmitter().emit(jsonArray.getString(1), jsonArray.get(2));
                 break;
             case "s":
-                if (jsonArray.getString(1).equals("c")){
+                if (jsonArray.getString(1).equals("c")) {
                     socket.getPingTimer().scheduleAtFixedRate(new TimerTask() {
                         @Override
                         public void run() {
-                            if (socket.getLost() < 3){
+                            if (socket.getMissedPing() < 3) {
                                 socket.incrementLost();
                             } else {
-                                socket.disconnect(4001,"No pings");
+                                socket.disconnect(4001, "No pings");
                                 cancel();
                             }
                         }
-                    },0,jsonArray.getJSONObject(2).getInt("ping"));
+                    }, 0, jsonArray.getJSONObject(2).getInt("ping"));
+                    boolean useBinary = jsonArray.getJSONObject(2).getBoolean("binary");
+                    socket.setUseBinary(useBinary);
+                    if (socket.getClusterWSListener() != null) {
+                        socket.getClusterWSListener().onConnected(socket);
+                    }
                 }
                 break;
         }
