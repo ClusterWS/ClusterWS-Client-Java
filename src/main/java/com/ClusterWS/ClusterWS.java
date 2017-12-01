@@ -3,6 +3,7 @@ package com.ClusterWS;
 import com.neovisionaries.ws.client.*;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,10 +21,11 @@ public class ClusterWS {
     private Emitter mEmitter;
     private ArrayList<Channel> mChannels;
     private Message mMessageHandler;
+    private boolean mUseBinary;
 
     //Ping
     private Timer mPingTimer;
-    private int mLost;
+    private int mMissedPing;
 
     private Reconnection mReconnectionHandler;
 
@@ -33,6 +35,7 @@ public class ClusterWS {
         mChannels = new ArrayList<>();
         mMessageHandler = new Message();
         mReconnectionHandler = new Reconnection(null, null, null, null, this);
+        mUseBinary = false;
         create();
     }
 
@@ -44,9 +47,7 @@ public class ClusterWS {
                         @Override
                         public void onConnected(WebSocket websocket, Map<String, List<String>> headers) throws Exception {
                             mReconnectionHandler.onConnected();
-                            if (mClusterWSListener != null) {
-                                mClusterWSListener.onConnected(ClusterWS.this);
-                            }
+                            mPingTimer = new Timer();
                         }
 
                         @Override
@@ -63,7 +64,7 @@ public class ClusterWS {
                         @Override
                         public void onTextMessage(WebSocket websocket, String text) throws Exception {
                             if (text.equals("#0")) {
-                                mLost = 0;
+                                mMissedPing = 0;
                                 send("#1", null, "ping");
                             } else {
                                 mMessageHandler.messageDecode(ClusterWS.this, text);
@@ -71,8 +72,20 @@ public class ClusterWS {
                         }
 
                         @Override
+                        public void onBinaryMessage(WebSocket websocket, byte[] binary) throws Exception {
+                            String message = new String(binary, StandardCharsets.UTF_8);
+                            System.out.println(message);
+                            if (message.equals("#0")) {
+                                mMissedPing = 0;
+                                send("#1", null, "ping");
+                            } else {
+                                mMessageHandler.messageDecode(ClusterWS.this, message);
+                            }
+                        }
+
+                        @Override
                         public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) throws Exception {
-                            mLost = 0;
+                            mMissedPing = 0;
                             if (mPingTimer != null) {
                                 mPingTimer.cancel();
                                 mPingTimer = new Timer();
@@ -97,6 +110,7 @@ public class ClusterWS {
                                 mClusterWSListener.onDisconnected(ClusterWS.this, serverCloseFrame, clientCloseFrame, closedByServer);
                             }
                         }
+
 
                     });
 
@@ -141,7 +155,12 @@ public class ClusterWS {
     }
 
     public void send(String event, Object data) {
-        mWebSocket.sendText(mMessageHandler.messageEncode(event, data, "emit"));
+        System.out.println(mUseBinary);
+        if (mUseBinary){
+            mWebSocket.sendBinary(mMessageHandler.messageEncode(event, data, "emit").getBytes());
+        } else {
+            mWebSocket.sendText(mMessageHandler.messageEncode(event, data, "emit"));
+        }
     }
 
     public Channel subscribe(String channelName) {
@@ -194,15 +213,23 @@ public class ClusterWS {
         return mPingTimer;
     }
 
-    int getLost() {
-        return mLost;
+    int getMissedPing() {
+        return mMissedPing;
     }
 
     void incrementLost() {
-        mLost++;
+        mMissedPing++;
     }
 
     boolean isConnectedAsynchronously() {
         return mIsConnectedAsynchronously;
+    }
+
+    void setUseBinary(boolean useBinary) {
+        mUseBinary = useBinary;
+    }
+
+    public ClusterWSListener getClusterWSListener() {
+        return mClusterWSListener;
     }
 }
