@@ -1,22 +1,17 @@
-package com.ClusterWS;
+package com.clusterws;
+
 
 class Options {
     private String mUrl;
-    private String mPort;
 
-    Options(String url, String port) {
-        if (port == null){
-            throw new NullPointerException("Port must be provided!");
+    Options(String url) {
+        if (url == null){
+            throw new NullPointerException("Url must be provided");
         }
         mUrl = url;
-        mPort = port;
     }
 
-    String getUrl() {
+    public String getUrl() {
         return mUrl;
-    }
-
-    String getPort() {
-        return mPort;
     }
 }

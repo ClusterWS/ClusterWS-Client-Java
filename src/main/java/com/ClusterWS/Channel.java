@@ -1,37 +1,35 @@
-package com.ClusterWS;
+package com.clusterws;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class Channel {
-    public interface ChannelListener {
+    public interface IChannelListener{
         void onDataReceived(String channelName, Object data);
     }
 
-    private ChannelListener mChannelListener;
+    private IChannelListener mChannelListener;
     private String mChannelName;
-    private ClusterWS mSocket;
+    private ClusterWS mClusterWS;
 
-    public Channel(String channelName, ClusterWS socket) {
+    public Channel(String channelName, ClusterWS clusterWS) {
         mChannelName = channelName;
-        mSocket = socket;
-        subscribe();
+        mClusterWS = clusterWS;
     }
 
-    public Channel watch(ChannelListener listener) {
+    public Channel watch(IChannelListener listener){
         mChannelListener = listener;
         return this;
     }
 
-    public Channel publish(Object data) {
-        mSocket.send(mChannelName, data, "publish");
+    public Channel publish(Object data){
+        mClusterWS.send(mChannelName,data,"publish");
         return this;
     }
 
     public void unsubscribe() {
-        mSocket.send("unsubscribe", mChannelName, "system");
-        ArrayList<Channel> channelArrayList = mSocket.getChannels();
+        mClusterWS.send("unsubscribe", mChannelName, "system");
+        List<Channel> channelArrayList = mClusterWS.getChannels();
         channelArrayList.remove(this);
-        mSocket.setChannels(channelArrayList);
     }
 
     String getChannelName() {
@@ -44,7 +42,7 @@ public class Channel {
         }
     }
 
-    void subscribe() {
-        mSocket.send("subscribe", mChannelName, "system");
+    void subscribe(){
+        mClusterWS.send("subscribe",mChannelName,"system");
     }
 }

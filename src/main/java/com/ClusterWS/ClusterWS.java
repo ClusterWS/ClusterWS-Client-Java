@@ -1,186 +1,114 @@
-package com.ClusterWS;
+package com.clusterws;
 
-import com.neovisionaries.ws.client.*;
+import org.java_websocket.WebSocket;
 
-import java.io.IOException;
+import java.net.URI;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.logging.Logger;
 
 public class ClusterWS {
-    private static final Logger LOGGER = Logger.getLogger(ClusterWS.class.getName());
-
-    private boolean mIsConnectedAsynchronously;
-
+    private Socket mSocket;
     private Options mOptions;
-    private ClusterWSListener mClusterWSListener;
-    private WebSocket mWebSocket;
     private Emitter mEmitter;
-    private ArrayList<Channel> mChannels;
-    private Message mMessageHandler;
     private boolean mUseBinary;
+    private IClusterWSListener mClusterWSListener;
+    private MessageHandler mMessageHandler;
+    private PingHandler mPingHandler;
+    private List<Channel> mChannels;
+    private ReconnectionHandler mReconnectionHandler;
 
-    //Ping
-    private Timer mPingTimer;
-    private int mMissedPing;
-
-    private Reconnection mReconnectionHandler;
-
-    public ClusterWS(String url, String port) {
-        mOptions = new Options(url, port);
-        mEmitter = new Emitter();
+    public ClusterWS(String url) {
+        mOptions = new Options(url);
         mChannels = new ArrayList<>();
-        mMessageHandler = new Message();
-        mReconnectionHandler = new Reconnection(null, null, null, null, this);
+        mReconnectionHandler = new ReconnectionHandler(null, null, null, null, this);
+        createSocket();
+    }
+
+    private void createSocket() {
+        mSocket = new Socket(URI.create(mOptions.getUrl()), new ISocketEvents() {
+            @Override
+            public void onOpen() {
+                mReconnectionHandler.onOpen();
+            }
+
+            @Override
+            public void onError(Exception exception) {
+                if (mClusterWSListener != null) {
+                    mClusterWSListener.onError(exception);
+                }
+            }
+
+            @Override
+            public void onClose(int code, String reason) {
+                if (mPingHandler.getPingTimer() != null) {
+                    mPingHandler.getPingTimer().cancel();
+                }
+
+                if (mReconnectionHandler.isInReconnectionState()) {
+                    return;
+                }
+                if (mReconnectionHandler.isAutoReconnect() && code != 1000) {
+                    mReconnectionHandler.reconnect();
+                }
+
+                if (mClusterWSListener != null) {
+                    mClusterWSListener.onDisconnected(code, reason);
+                }
+            }
+
+            @Override
+            public void onBinaryMessage(ByteBuffer bytes) {
+                String message = StandardCharsets.UTF_8.decode(bytes).toString();
+                onMessageReceived(message);
+            }
+
+            @Override
+            public void onMessage(String message) {
+                onMessageReceived(message);
+            }
+        });
         mUseBinary = false;
-        create();
+        mEmitter = new Emitter();
+        mMessageHandler = new MessageHandler();
+        mPingHandler = new PingHandler();
     }
 
-    private void create() {
-        try {
-            mWebSocket = new WebSocketFactory()
-                    .createSocket("ws://" + mOptions.getUrl() + ":" + mOptions.getPort())
-                    .addListener(new WebSocketAdapter() {
-                        @Override
-                        public void onConnected(WebSocket websocket, Map<String, List<String>> headers) throws Exception {
-                            mReconnectionHandler.onConnected();
-                            mPingTimer = new Timer();
-                        }
-
-                        @Override
-                        public void onConnectError(WebSocket websocket, WebSocketException exception) throws Exception {
-                            if (mReconnectionHandler.isAutoReconnect() && !mReconnectionHandler.isInReconnectionState()) {
-                                mReconnectionHandler.reconnect(ClusterWS.this);
-                            }
-                            if (mClusterWSListener != null) {
-                                mClusterWSListener.onConnectError(ClusterWS.this, exception);
-                            }
-
-                        }
-
-                        @Override
-                        public void onTextMessage(WebSocket websocket, String text) throws Exception {
-                            if (text.equals("#0")) {
-                                mMissedPing = 0;
-                                send("#1", null, "ping");
-                            } else {
-                                mMessageHandler.messageDecode(ClusterWS.this, text);
-                            }
-                        }
-
-                        @Override
-                        public void onBinaryMessage(WebSocket websocket, byte[] binary) throws Exception {
-                            String message = new String(binary, StandardCharsets.UTF_8);
-                            System.out.println(message);
-                            if (message.equals("#0")) {
-                                mMissedPing = 0;
-                                send("#1", null, "ping");
-                            } else {
-                                mMessageHandler.messageDecode(ClusterWS.this, message);
-                            }
-                        }
-
-                        @Override
-                        public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) throws Exception {
-                            mMissedPing = 0;
-                            if (mPingTimer != null) {
-                                mPingTimer.cancel();
-                                mPingTimer = new Timer();
-                            }
-
-                            if (serverCloseFrame == null) {
-                                serverCloseFrame = new WebSocketFrame().setCloseFramePayload(1006, "Unknown");
-                            }
-
-                            if (clientCloseFrame == null) {
-                                clientCloseFrame = new WebSocketFrame().setCloseFramePayload(1006, "Unknown");
-                            }
-                            if (mReconnectionHandler.isInReconnectionState()) {
-                                return;
-                            }
-
-                            if (mReconnectionHandler.isAutoReconnect() && serverCloseFrame.getCloseCode() != 1000 && clientCloseFrame.getCloseCode() != 1000) {
-                                mReconnectionHandler.reconnect(ClusterWS.this);
-                            }
-
-                            if (mClusterWSListener != null) {
-                                mClusterWSListener.onDisconnected(ClusterWS.this, serverCloseFrame, clientCloseFrame, closedByServer);
-                            }
-                        }
-
-
-                    });
-
-        } catch (IOException e) {
-            LOGGER.severe("Failed to create a socket. Or, HTTP proxy handshake or SSL handshake failed.");
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("The given URI violates RFC 2396. " + e.getMessage());
-        }
-    }
-
-    public void setReconnection(Boolean autoReconnect, Integer reconnectionIntervalMin, Integer reconnectionIntervalMax, Integer reconnectionAttempts) {
-        mReconnectionHandler = new Reconnection(autoReconnect, reconnectionIntervalMin, reconnectionIntervalMax, reconnectionAttempts, this);
+    public ClusterWS setReconnection(Boolean autoReconnect, Integer reconnectionIntervalMin, Integer reconnectionIntervalMax, Integer reconnectionAttempts) {
+        mReconnectionHandler = new ReconnectionHandler(autoReconnect, reconnectionIntervalMin, reconnectionIntervalMax, reconnectionAttempts, this);
+        return this;
     }
 
     public void connect() {
-        try {
-            mIsConnectedAsynchronously = false;
-            create();
-            mWebSocket.connect();
-        } catch (WebSocketException e) {
-            if (mReconnectionHandler.isAutoReconnect() && !mReconnectionHandler.isInReconnectionState()) {
-                mReconnectionHandler.reconnect(ClusterWS.this);
-            }
-            if (mClusterWSListener != null) {
-                mClusterWSListener.onConnectError(ClusterWS.this, e);
-            }
-        }
+        createSocket();
+        mSocket.connect();
     }
 
-    public void connectAsynchronously() {
-        mIsConnectedAsynchronously = true;
-        create();
-        mWebSocket.connectAsynchronously();
-    }
 
-    public void setClusterWSListener(ClusterWSListener clusterWSListener) {
+    public ClusterWS setClusterWSListener(IClusterWSListener clusterWSListener) {
         mClusterWSListener = clusterWSListener;
+        return this;
     }
 
-    public void on(String event, EmitterListener listener) {
-        mEmitter.on(event, listener);
+    public void on(String event, IEmitterListener listener) {
+        mEmitter.addEventListener(event, listener);
     }
 
     public void send(String event, Object data) {
-        System.out.println(mUseBinary);
-        if (mUseBinary){
-            mWebSocket.sendBinary(mMessageHandler.messageEncode(event, data, "emit").getBytes());
+        if (mUseBinary) {
+            mSocket.send(mMessageHandler.messageEncode(event, data, "emit").getBytes());
         } else {
-            mWebSocket.sendText(mMessageHandler.messageEncode(event, data, "emit"));
+            mSocket.send(mMessageHandler.messageEncode(event, data, "emit"));
         }
     }
 
-    public Channel subscribe(String channelName) {
-        for (Channel channel :
-                mChannels) {
-            if (channel.getChannelName().equals(channelName)) {
-                return channel;
-            }
-        }
-        Channel newChannel = new Channel(channelName, this);
-        mChannels.add(newChannel);
-        return newChannel;
+    public WebSocket.READYSTATE getState() {
+        return mSocket.getReadyState();
     }
 
-    public WebSocketState getState() {
-        return mWebSocket.getState();
-    }
-
-    public ArrayList<Channel> getChannels() {
-        return mChannels;
+    public void disconnect(Integer closeCode, String reason) {
+        mSocket.close(closeCode == null ? 1000 : closeCode, reason);
     }
 
     public Channel getChannelByName(String channelName) {
@@ -193,43 +121,55 @@ public class ClusterWS {
         return null;
     }
 
-    public void disconnect(Integer closeCode, String reason) {
-        mWebSocket.disconnect(closeCode == null ? 1000 : closeCode, reason);
+    public Channel subscribe(String channelName) {
+        for (Channel channel :
+                mChannels) {
+            if (channel.getChannelName().equals(channelName)) {
+                return channel;
+            }
+        }
+        Channel newChannel = new Channel(channelName, this);
+        newChannel.subscribe();
+        mChannels.add(newChannel);
+        return newChannel;
     }
 
-    void send(String event, Object data, String type) {
-        mWebSocket.sendText(mMessageHandler.messageEncode(event, data, type));
+    public List<Channel> getChannels() {
+        return mChannels;
+    }
+
+    IClusterWSListener getClusterWSListener() {
+        return mClusterWSListener;
     }
 
     Emitter getEmitter() {
         return mEmitter;
     }
 
-    void setChannels(ArrayList<Channel> channels) {
-        mChannels = channels;
-    }
-
-    Timer getPingTimer() {
-        return mPingTimer;
-    }
-
-    int getMissedPing() {
-        return mMissedPing;
-    }
-
-    void incrementLost() {
-        mMissedPing++;
-    }
-
-    boolean isConnectedAsynchronously() {
-        return mIsConnectedAsynchronously;
-    }
-
     void setUseBinary(boolean useBinary) {
         mUseBinary = useBinary;
     }
 
-    public ClusterWSListener getClusterWSListener() {
-        return mClusterWSListener;
+
+    void send(String event, Object data, String type) {
+        if (mUseBinary) {
+            mSocket.send(mMessageHandler.messageEncode(event, data, type).getBytes());
+        } else {
+            mSocket.send(mMessageHandler.messageEncode(event, data, type));
+
+        }
+    }
+
+    PingHandler getPingHandler() {
+        return mPingHandler;
+    }
+
+    private void onMessageReceived(String message) {
+        if (message.equals("#0")) {
+            mPingHandler.setMissedPingToZero();
+            send("#1", null, "ping");
+        } else {
+            mMessageHandler.messageDecode(ClusterWS.this, message);
+        }
     }
 }

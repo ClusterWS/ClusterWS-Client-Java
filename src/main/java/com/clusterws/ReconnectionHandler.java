@@ -1,13 +1,14 @@
-package com.ClusterWS;
+package com.clusterws;
 
-import com.neovisionaries.ws.client.WebSocketState;
+import org.java_websocket.WebSocket;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ThreadLocalRandom;
 
-class Reconnection {
+class ReconnectionHandler {
     private final boolean mAutoReconnect;
     private final int mReconnectionIntervalMin;
     private final int mReconnectionIntervalMax;
@@ -18,7 +19,7 @@ class Reconnection {
     private Timer mTimerOff;
     private ClusterWS mSocket;
 
-    Reconnection(Boolean autoReconnect, Integer reconnectionIntervalMin, Integer reconnectionIntervalMax, Integer reconnectionAttempts, ClusterWS socket) {
+    ReconnectionHandler(Boolean autoReconnect, Integer reconnectionIntervalMin, Integer reconnectionIntervalMax, Integer reconnectionAttempts, ClusterWS socket) {
         mAutoReconnect = autoReconnect != null ? autoReconnect : false;
         mReconnectionIntervalMin = reconnectionIntervalMin != null ? reconnectionIntervalMin : 1000;
         mReconnectionIntervalMax = reconnectionIntervalMax != null ? reconnectionIntervalMax : 5000;
@@ -28,33 +29,34 @@ class Reconnection {
         mReconnectionsAttempted = 0;
     }
 
-    void onConnected() {
+    void onOpen(){
         if (mReconnectionTimer != null) {
             mReconnectionTimer.cancel();
             mReconnectionTimer = null;
         }
+
         if (mTimerOff != null) {
             mTimerOff.cancel();
             mTimerOff = null;
         }
+
         mInReconnectionState = false;
         mReconnectionsAttempted = 0;
+        List<Channel> channels = mSocket.getChannels();
 
-        ArrayList<Channel> channels = mSocket.getChannels();
         for (Channel channel :
                 channels) {
             channel.subscribe();
         }
-
     }
 
-    void reconnect(final ClusterWS socket) {
+    void reconnect(){
         mInReconnectionState = true;
         mReconnectionTimer = new Timer();
         mReconnectionTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                if (socket.getState() == WebSocketState.CLOSED) {
+                if (mSocket.getState() == WebSocket.READYSTATE.CLOSED) {
                     mReconnectionsAttempted++;
                     if (mReconnectionAttempts != 0 && mReconnectionsAttempted >= mReconnectionAttempts) {
                         cancel();
@@ -68,11 +70,7 @@ class Reconnection {
                         mTimerOff.schedule(new TimerTask() {
                             @Override
                             public void run() {
-                                if (socket.isConnectedAsynchronously()) {
-                                    socket.connectAsynchronously();
-                                } else {
-                                    socket.connect();
-                                }
+                                mSocket.connect();
                             }
                         }, randomDelay);
                     }
@@ -81,11 +79,11 @@ class Reconnection {
         }, 0, mReconnectionIntervalMin);
     }
 
-    boolean isAutoReconnect() {
-        return mAutoReconnect;
-    }
-
     boolean isInReconnectionState() {
         return mInReconnectionState;
+    }
+
+    boolean isAutoReconnect() {
+        return mAutoReconnect;
     }
 }
