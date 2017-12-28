@@ -10,7 +10,7 @@ import java.util.List;
 
 public class ClusterWS {
     private Socket mSocket;
-    private Options mOptions;
+    private String mUrl;
     private Emitter mEmitter;
     private boolean mUseBinary;
     private IClusterWSListener mClusterWSListener;
@@ -20,63 +20,22 @@ public class ClusterWS {
     private ReconnectionHandler mReconnectionHandler;
 
     public ClusterWS(String url) {
-        mOptions = new Options(url);
+        if (url == null){
+            throw new NullPointerException("Url must be provided");
+        }
+        mUrl = url;
         mChannels = new ArrayList<>();
         mReconnectionHandler = new ReconnectionHandler(null, null, null, null, this);
         createSocket();
     }
 
-    private void createSocket() {
-        mSocket = new Socket(URI.create(mOptions.getUrl()), new ISocketEvents() {
-            @Override
-            public void onOpen() {
-                mReconnectionHandler.onOpen();
-            }
-
-            @Override
-            public void onError(Exception exception) {
-                if (mClusterWSListener != null) {
-                    mClusterWSListener.onError(exception);
-                }
-            }
-
-            @Override
-            public void onClose(int code, String reason) {
-                if (mPingHandler.getPingTimer() != null) {
-                    mPingHandler.getPingTimer().cancel();
-                }
-
-                if (mReconnectionHandler.isInReconnectionState()) {
-                    return;
-                }
-                if (mReconnectionHandler.isAutoReconnect() && code != 1000) {
-                    mReconnectionHandler.reconnect();
-                }
-
-                if (mClusterWSListener != null) {
-                    mClusterWSListener.onDisconnected(code, reason);
-                }
-            }
-
-            @Override
-            public void onBinaryMessage(ByteBuffer bytes) {
-                String message = StandardCharsets.UTF_8.decode(bytes).toString();
-                onMessageReceived(message);
-            }
-
-            @Override
-            public void onMessage(String message) {
-                onMessageReceived(message);
-            }
-        });
-        mUseBinary = false;
-        mEmitter = new Emitter();
-        mMessageHandler = new MessageHandler();
-        mPingHandler = new PingHandler();
-    }
-
     public ClusterWS setReconnection(Boolean autoReconnect, Integer reconnectionIntervalMin, Integer reconnectionIntervalMax, Integer reconnectionAttempts) {
         mReconnectionHandler = new ReconnectionHandler(autoReconnect, reconnectionIntervalMin, reconnectionIntervalMax, reconnectionAttempts, this);
+        return this;
+    }
+
+    public ClusterWS setClusterWSListener(IClusterWSListener clusterWSListener) {
+        mClusterWSListener = clusterWSListener;
         return this;
     }
 
@@ -85,10 +44,8 @@ public class ClusterWS {
         mSocket.connect();
     }
 
-
-    public ClusterWS setClusterWSListener(IClusterWSListener clusterWSListener) {
-        mClusterWSListener = clusterWSListener;
-        return this;
+    public void disconnect(Integer closeCode, String reason) {
+        mSocket.close(closeCode == null ? 1000 : closeCode, reason);
     }
 
     public void on(String event, IEmitterListener listener) {
@@ -107,9 +64,6 @@ public class ClusterWS {
         return mSocket.getReadyState();
     }
 
-    public void disconnect(Integer closeCode, String reason) {
-        mSocket.close(closeCode == null ? 1000 : closeCode, reason);
-    }
 
     public Channel getChannelByName(String channelName) {
         for (Channel channel :
@@ -164,6 +118,55 @@ public class ClusterWS {
         return mPingHandler;
     }
 
+    private void createSocket() {
+        mSocket = new Socket(URI.create(mUrl), new ISocketEvents() {
+            @Override
+            public void onOpen() {
+                mReconnectionHandler.onOpen();
+            }
+
+            @Override
+            public void onError(Exception exception) {
+                if (mClusterWSListener != null) {
+                    mClusterWSListener.onError(exception);
+                }
+            }
+
+            @Override
+            public void onClose(int code, String reason) {
+                if (mPingHandler.getPingTimer() != null) {
+                    mPingHandler.getPingTimer().cancel();
+                }
+
+                if (mReconnectionHandler.isInReconnectionState()) {
+                    return;
+                }
+                if (mReconnectionHandler.isAutoReconnect() && code != 1000) {
+                    mReconnectionHandler.reconnect();
+                }
+
+                if (mClusterWSListener != null) {
+                    mClusterWSListener.onDisconnected(code, reason);
+                }
+            }
+
+            @Override
+            public void onBinaryMessage(ByteBuffer bytes) {
+                String message = StandardCharsets.UTF_8.decode(bytes).toString();
+                onMessageReceived(message);
+            }
+
+            @Override
+            public void onMessage(String message) {
+                onMessageReceived(message);
+            }
+        });
+        mUseBinary = false;
+        mEmitter = new Emitter();
+        mMessageHandler = new MessageHandler();
+        mPingHandler = new PingHandler();
+    }
+
     private void onMessageReceived(String message) {
         if (message.equals("#0")) {
             mPingHandler.setMissedPingToZero();
@@ -172,4 +175,5 @@ public class ClusterWS {
             mMessageHandler.messageDecode(ClusterWS.this, message);
         }
     }
+
 }
