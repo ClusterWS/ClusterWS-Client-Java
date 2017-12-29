@@ -53,17 +53,12 @@ public class ClusterWS {
     }
 
     public void send(String event, Object data) {
-        if (mUseBinary) {
-            mSocket.send(mMessageHandler.messageEncode(event, data, "emit").getBytes());
-        } else {
-            mSocket.send(mMessageHandler.messageEncode(event, data, "emit"));
-        }
+        send(event,data,"emit");
     }
 
     public WebSocket.READYSTATE getState() {
         return mSocket.getReadyState();
     }
-
 
     public Channel getChannelByName(String channelName) {
         for (Channel channel :
