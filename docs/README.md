@@ -15,5 +15,5 @@
 
 <h1></h1>
 <h3 align="center">
-    <a href="https://github.com/ClusterWS/ClusterWS-Client-Java/wiki"><strong>ClusterWS JavaScript Client Documentation</strong></a>
+    <a href="https://github.com/ClusterWS/ClusterWS-Client-Java/wiki"><strong>ClusterWS Java Client Documentation</strong></a>
 </h3>
