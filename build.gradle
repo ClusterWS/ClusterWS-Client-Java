@@ -1,24 +1,26 @@
-version '1.3.0'
-
 apply plugin: 'java'
+apply plugin: 'idea'
 apply plugin: 'maven'
 
+group 'com.github.clusterws'
+version '1.5'
 sourceCompatibility = 1.8
-
-group 'com.github.ClusterWS'
-
+targetCompatibility = 1.8
 
 repositories {
-    maven {
-        url("https://jitpack.io" )
-    }
     mavenCentral()
+    jcenter()
+}
+
+configurations {
+    deployerJars
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-    compile 'com.neovisionaries:nv-websocket-client:2.3'
-    compile group: 'org.json', name: 'json', version: '20170516'
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.mockito:mockito-core:2.7.22'
+    compile "org.java-websocket:Java-WebSocket:1.3.6"
+    compile 'com.alibaba:fastjson:1.2.44'
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
@@ -35,4 +37,3 @@ artifacts {
     archives sourcesJar
     archives javadocJar
 }
-

@@ -2,5 +2,4 @@
 /build
 *.iml
 /.gradle
-/src/test
 /out
