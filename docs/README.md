@@ -6,7 +6,9 @@
 </p>
 
 <p align="center">
- <a title="JitPack Version" href="https://jitpack.io/#ClusterWS/ClusterWS-Client-Java"><img src="https://jitpack.io/v/ClusterWS/ClusterWS-Client-Java.svg"></a>
+    <a href="https://github.com/ClusterWS/ClusterWS-Client-Java/blob/master/LICENSE"><img src="https://img.shields.io/github/license/ClusterWS/ClusterWS-Client-JS.svg?style=for-the-badge" alt="GitHub license" /></a>
+ <a title="JitPack Version" href="https://jitpack.io/#ClusterWS/ClusterWS-Client-Java"><img src="https://img.shields.io/badge/JitPack-1.6.0-brightgreen.svg?longCache=true&style=for-the-badge"></a>
+     <a href="https://github.com/ClusterWS/ClusterWS-Client-JS/graphs/commit-activity"><img src="https://img.shields.io/badge/Maintain-Yes-green.svg?style=for-the-badge" alt="Maintain" /></a>
 </p>
 
 <p align="center">
