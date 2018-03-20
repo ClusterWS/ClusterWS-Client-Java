@@ -7,6 +7,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class ClusterWS {
     private Socket mSocket;
@@ -17,20 +20,30 @@ public class ClusterWS {
     private MessageHandler mMessageHandler;
     private PingHandler mPingHandler;
     private List<Channel> mChannels;
-    private ReconnectionHandler mReconnectionHandler;
+    private ReconnectionParams mReconnectionParams;
 
     public ClusterWS(String url) {
-        if (url == null){
+        if (url == null) {
             throw new NullPointerException("Url must be provided");
         }
         mUrl = url;
         mChannels = new ArrayList<>();
-        mReconnectionHandler = new ReconnectionHandler(null, null, null, null, this);
+        mReconnectionParams = new ReconnectionParams(
+                false,
+                null,
+                null,
+                null);
         createSocket();
     }
 
-    public ClusterWS setReconnection(Boolean autoReconnect, Integer reconnectionIntervalMin, Integer reconnectionIntervalMax, Integer reconnectionAttempts) {
-        mReconnectionHandler = new ReconnectionHandler(autoReconnect, reconnectionIntervalMin, reconnectionIntervalMax, reconnectionAttempts, this);
+    public ClusterWS setReconnection(Boolean autoReconnect,
+                                     Integer reconnectionIntervalMin,
+                                     Integer reconnectionIntervalMax,
+                                     Integer reconnectionAttempts) {
+        mReconnectionParams = new ReconnectionParams(autoReconnect,
+                reconnectionIntervalMin,
+                reconnectionIntervalMax,
+                reconnectionAttempts);
         return this;
     }
 
@@ -53,7 +66,7 @@ public class ClusterWS {
     }
 
     public void send(String event, Object data) {
-        send(event,data,"emit");
+        send(event, data, "emit");
     }
 
     public WebSocket.READYSTATE getState() {
@@ -117,7 +130,7 @@ public class ClusterWS {
         mSocket = new Socket(URI.create(mUrl), new ISocketEvents() {
             @Override
             public void onOpen() {
-                mReconnectionHandler.onOpen();
+                mClusterWSListener.onConnected();
             }
 
             @Override
@@ -132,17 +145,22 @@ public class ClusterWS {
                 if (mPingHandler.getPingTimer() != null) {
                     mPingHandler.getPingTimer().cancel();
                 }
-
-                if (mReconnectionHandler.isInReconnectionState()) {
-                    return;
+                if (mReconnectionParams.isAutoReconnect() && code != 1000 && (mReconnectionParams.getReconnectionAttempts() == 0 || mReconnectionParams.getReconnectionsAttempted() < mReconnectionParams.getReconnectionAttempts())) {
+                    if (mSocket.getReadyState() == WebSocket.READYSTATE.CLOSED || mSocket.getReadyState() == WebSocket.READYSTATE.NOT_YET_CONNECTED) {
+                        mReconnectionParams.incrementReconnectionsAttempted();
+                        int randomDelay = ThreadLocalRandom.current().nextInt(1,
+                                mReconnectionParams.getReconnectionIntervalMax() -
+                                        mReconnectionParams.getReconnectionIntervalMin() +
+                                        1);
+                        new Timer().schedule(new TimerTask() {
+                            @Override
+                            public void run() {
+                                connect();
+                            }
+                        }, randomDelay);
+                    }
                 }
-                if (mReconnectionHandler.isAutoReconnect() && code != 1000) {
-                    mReconnectionHandler.reconnect();
-                }
-
-                if (mClusterWSListener != null) {
-                    mClusterWSListener.onDisconnected(code, reason);
-                }
+                mClusterWSListener.onDisconnected(code, reason);
             }
 
             @Override
@@ -170,5 +188,4 @@ public class ClusterWS {
             mMessageHandler.messageDecode(ClusterWS.this, message);
         }
     }
-
 }
