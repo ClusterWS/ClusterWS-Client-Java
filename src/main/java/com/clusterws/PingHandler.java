@@ -15,7 +15,7 @@ class PingHandler {
         mMissedPing++;
     }
 
-    void setMissedPingToZero(){
+    void setMissedPingToZero() {
         mMissedPing = 0;
     }
 
