@@ -27,7 +27,7 @@ class Socket extends WebSocketClient {
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
-        mSocketEvents.onClose(code,reason);
+        mSocketEvents.onClose(code, reason);
     }
 
     @Override

@@ -3,7 +3,7 @@ package com.clusterws;
 import java.util.List;
 
 public class Channel {
-    public interface IChannelListener{
+    public interface IChannelListener {
         void onDataReceived(String channelName, Object data);
     }
 
@@ -16,13 +16,13 @@ public class Channel {
         mClusterWS = clusterWS;
     }
 
-    public Channel watch(IChannelListener listener){
+    public Channel watch(IChannelListener listener) {
         mChannelListener = listener;
         return this;
     }
 
-    public Channel publish(Object data){
-        mClusterWS.send(mChannelName,data,"publish");
+    public Channel publish(Object data) {
+        mClusterWS.send(mChannelName, data, "publish");
         return this;
     }
 
@@ -42,7 +42,7 @@ public class Channel {
         }
     }
 
-    void subscribe(){
-        mClusterWS.send("subscribe",mChannelName,"system");
+    void subscribe() {
+        mClusterWS.send("subscribe", mChannelName, "system");
     }
 }
