@@ -17,5 +17,5 @@
 
 <h1></h1>
 <h3 align="center">
-    Find more about ClusterWS JavaScript Client in <a href="https://github.com/ClusterWS/ClusterWS-Client-Java/wiki"><strong>Wiki Documentation</strong></a>
+    Find more about ClusterWS Java Client in <a href="https://github.com/ClusterWS/ClusterWS-Client-Java/wiki"><strong>Wiki Documentation</strong></a>
 </h3>
