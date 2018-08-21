@@ -16,7 +16,7 @@ public class ChannelServerTest {
 
     @Before
     public void init() throws Exception {
-        mClusterWS = new ClusterWS("ws://localhost:80");
+        mClusterWS = new ClusterWS("ws://localhost:3000");
         mGotTheData = false;
         mReceivedData = null;
     }
@@ -189,7 +189,7 @@ public class ChannelServerTest {
                     }
                 });
         mClusterWS.disconnect(4001, "hui");
-        Thread.sleep(1000);
+        Thread.sleep(3000);
         channel.publish("testData");
         Thread.sleep(1000);
         assertTrue("Did not get the data", mGotTheData);
