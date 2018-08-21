@@ -20,7 +20,7 @@ public class ClusterWSTest {
 
     @Before
     public void init() {
-        mClusterWS = new ClusterWS("ws://localhost:80");
+        mClusterWS = new ClusterWS("ws://localhost:3000");
         receivedData = null;
         gotTheData = false;
     }
@@ -36,7 +36,7 @@ public class ClusterWSTest {
         mClusterWS.connect();
         Thread.sleep(1000);
 
-        assertEquals("Socket did not connect", WebSocket.READYSTATE.OPEN,mClusterWS.getState());
+        assertEquals("Socket did not connect", WebSocket.READYSTATE.OPEN, mClusterWS.getState());
     }
 
     @Test
@@ -233,24 +233,24 @@ public class ClusterWSTest {
     }
 
     @Test
-    public void testReconnection() throws Exception{
-        mClusterWS.setReconnection(true,1000,2000,null);
+    public void testReconnection() throws Exception {
+        mClusterWS.setReconnection(true, 1000, 2000, null);
         mClusterWS.connect();
         Thread.sleep(1000);
-        mClusterWS.disconnect(3002,"test");
-        Thread.sleep(2000);
+        mClusterWS.disconnect(3002, "test");
+        Thread.sleep(4000);
         assertEquals("Did not reconnect", WebSocket.READYSTATE.OPEN, mClusterWS.getState());
     }
 
     @Test
-    public void testPingPong() throws Exception{
+    public void testPingPong() throws Exception {
         mClusterWS.connect();
         Thread.sleep(1900);
-        assertEquals("Websocket disconnected", WebSocket.READYSTATE.OPEN,mClusterWS.getState());
+        assertEquals("Websocket disconnected", WebSocket.READYSTATE.OPEN, mClusterWS.getState());
     }
 
     @Test(expected = NullPointerException.class)
-    public void testNullUrl() throws Exception{
+    public void testNullUrl() throws Exception {
         mClusterWS = new ClusterWS(null);
     }
 
