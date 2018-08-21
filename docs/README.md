@@ -7,7 +7,7 @@
 
 <p align="center">
     <a href="https://github.com/ClusterWS/ClusterWS-Client-Java/blob/master/LICENSE"><img src="https://img.shields.io/badge/LICENSE-MIT-AE1E80.svg?longCache=true&style=for-the-badge"></a>
-    <a title="JitPack Version" href="https://jitpack.io/#ClusterWS/ClusterWS-Client-Java"><img src="https://img.shields.io/badge/JitPack-3.0.0-AE1E80.svg?longCache=true&style=for-the-badge"></a>
+    <a title="JitPack Version" href="https://jitpack.io/#ClusterWS/ClusterWS-Client-Java"><img src="https://img.shields.io/badge/JitPack-3.0.1-AE1E80.svg?longCache=true&style=for-the-badge"></a>
     <a href="https://github.com/ClusterWS/ClusterWS-Client-JS/graphs/commit-activity"><img src="https://img.shields.io/badge/Maintain-Yes-AE1E80.svg?style=for-the-badge" alt="Maintain" /></a>
 </p>
 
