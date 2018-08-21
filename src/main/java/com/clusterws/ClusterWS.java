@@ -171,7 +171,6 @@ public class ClusterWS {
 
             @Override
             public void onBinaryMessage(ByteBuffer bytes) {
-                System.out.println("GOT MESSAGE");
                 byte[] arr = new byte[bytes.remaining()];
                 bytes.get(arr);
                 if (arr.length == 1 && arr[0] == 57) {
@@ -196,7 +195,6 @@ public class ClusterWS {
     }
 
     private void onMessageReceived(String message) {
-        System.out.println("MESSAGE IS " + message);
         mMessageHandler.messageDecode(ClusterWS.this, message);
     }
 }
