@@ -21,6 +21,7 @@ public class ClusterWS {
     private PingHandler mPingHandler;
     private List<Channel> mChannels;
     private ReconnectionParams mReconnectionParams;
+    private static final byte[] PONG = "A".getBytes();
 
     public ClusterWS(String url) {
         if (url == null) {
@@ -130,7 +131,10 @@ public class ClusterWS {
         mSocket = new Socket(URI.create(mUrl), new ISocketEvents() {
             @Override
             public void onOpen() {
-                mClusterWSListener.onConnected();
+                for (Channel channel :
+                        mChannels) {
+                    channel.subscribe();
+                }
             }
 
             @Override
@@ -145,8 +149,10 @@ public class ClusterWS {
                 if (mPingHandler.getPingTimer() != null) {
                     mPingHandler.getPingTimer().cancel();
                 }
-                if (mReconnectionParams.isAutoReconnect() && code != 1000 && (mReconnectionParams.getReconnectionAttempts() == 0 || mReconnectionParams.getReconnectionsAttempted() < mReconnectionParams.getReconnectionAttempts())) {
-                    if (mSocket.getReadyState() == WebSocket.READYSTATE.CLOSED || mSocket.getReadyState() == WebSocket.READYSTATE.NOT_YET_CONNECTED) {
+                if (mReconnectionParams.isAutoReconnect()
+                        && code != 1000
+                        && (mReconnectionParams.getReconnectionAttempts() == 0 || mReconnectionParams.getReconnectionsAttempted() < mReconnectionParams.getReconnectionAttempts())) {
+                    if (mSocket.getReadyState() == WebSocket.READYSTATE.CLOSED || mSocket.getReadyState() == WebSocket.READYSTATE.NOT_YET_CONNECTED || mSocket.getReadyState() == WebSocket.READYSTATE.CLOSING) {
                         mReconnectionParams.incrementReconnectionsAttempted();
                         int randomDelay = ThreadLocalRandom.current().nextInt(1,
                                 mReconnectionParams.getReconnectionIntervalMax() -
@@ -165,8 +171,17 @@ public class ClusterWS {
 
             @Override
             public void onBinaryMessage(ByteBuffer bytes) {
-                String message = StandardCharsets.UTF_8.decode(bytes).toString();
-                onMessageReceived(message);
+                System.out.println("GOT MESSAGE");
+                byte[] arr = new byte[bytes.remaining()];
+                bytes.get(arr);
+                if (arr.length == 1 && arr[0] == 57) {
+                    mPingHandler.setMissedPingToZero();
+                    mSocket.send(PONG);
+                } else {
+                    String message = new String(arr, StandardCharsets.UTF_8);
+                    onMessageReceived(message);
+                }
+
             }
 
             @Override
@@ -181,11 +196,7 @@ public class ClusterWS {
     }
 
     private void onMessageReceived(String message) {
-        if (message.equals("#0")) {
-            mPingHandler.setMissedPingToZero();
-            send("#1", null, "ping");
-        } else {
-            mMessageHandler.messageDecode(ClusterWS.this, message);
-        }
+        System.out.println("MESSAGE IS " + message);
+        mMessageHandler.messageDecode(ClusterWS.this, message);
     }
 }
