@@ -54,7 +54,6 @@ public class ClusterWS {
     }
 
     public void connect() {
-        createSocket();
         mSocket.connect();
     }
 
